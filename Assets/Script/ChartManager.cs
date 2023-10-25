@@ -32,7 +32,7 @@ namespace Phigodot.Game
 		[Export]
 		public Label ComboLabel;
 		public int Combo;
-		public int Time;
+		public double Time;
 
 		[Export]
 		public TextureRect BackGroundImage;
@@ -70,6 +70,8 @@ namespace Phigodot.Game
 		// Called every frame. 'delta' is the elapsed time since the previous frame.
 		public override void _Process(double delta)
 		{
+			Time += delta;
+			
 			ComboLabel.Text = Combo.ToString();
 			ScoreLabel.Text = Score.ToString("D7");
 
