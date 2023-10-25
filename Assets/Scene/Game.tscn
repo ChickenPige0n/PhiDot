@@ -19,7 +19,7 @@ font_size = 40
 font = ExtResource("1_vlqfs")
 font_size = 20
 
-[node name="Game" type="Control" node_paths=PackedStringArray("ScoreInfo", "GameModeInfo", "ComboInfo")]
+[node name="Game" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -27,9 +27,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_di470")
-ScoreInfo = NodePath("Backgroun/UI/Score")
-GameModeInfo = NodePath("Backgroun/ComboUI/GameMode")
-ComboInfo = NodePath("Backgroun/ComboUI/Combo")
 
 [node name="Backgroun" type="TextureRect" parent="."]
 layout_mode = 1

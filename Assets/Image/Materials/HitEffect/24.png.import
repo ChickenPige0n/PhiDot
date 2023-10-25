@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c6ek6p2fo4gsy"
-path="res://.godot/imported/4.png-209db94c0afb676e53cad4cfc3aa5d96.ctex"
+uid="uid://b7r8nop8g2vex"
+path="res://.godot/imported/24.png-c1dd2d3dc4ca5647c38bd063f5524868.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Image/Materials/Strike_Effect/4.png"
-dest_files=["res://.godot/imported/4.png-209db94c0afb676e53cad4cfc3aa5d96.ctex"]
+source_file="res://Assets/Image/Materials/HitEffect/24.png"
+dest_files=["res://.godot/imported/24.png-c1dd2d3dc4ca5647c38bd063f5524868.ctex"]
 
 [params]
 
