@@ -116,6 +116,7 @@ namespace Phigodot.Game
 			string json = File.ReadAllText(Json_File);
 			Chart = JsonConvert.DeserializeObject<RPEChart>(json);
 		}
+		// 感动中国的Timer,,
 		public void Timer()
 		{
 			while (true)
