@@ -1,7 +1,7 @@
 using Godot;
 using System.Threading;
 
-public partial class Suspend : TextureButton
+public partial class Pause : TextureButton
 {
     private int Click = 0;  // 计时器缓存
 
@@ -16,7 +16,7 @@ public partial class Suspend : TextureButton
         }
     }
 
-    public void Suspend_Game()  // 暂停游戏函数
+    public void Pause_Game()  // 暂停游戏函数
     {
         Click++;
         if (Click >= 2)
@@ -33,7 +33,7 @@ public partial class Suspend : TextureButton
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
-        Pressed += Suspend_Game;  // 连接事件信号
+        Pressed += Pause_Game;  // 连接事件信号
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
