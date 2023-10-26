@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://dplevybj8qnbv"]
+[gd_scene load_steps=13 format=3 uid="uid://dplevybj8qnbv"]
 
 [ext_resource type="Script" path="res://Assets/Script/ChartManager.cs" id="1_di470"]
 [ext_resource type="FontFile" uid="uid://c8668gfxciipd" path="res://Assets/Font/Phigros.ttf" id="1_vlqfs"]
 [ext_resource type="AudioStream" uid="uid://djgjr220x0tnl" path="res://Assets/Audio/Effects/Tap_or_Hold.wav" id="2_clytu"]
 [ext_resource type="Texture2D" uid="uid://bjka5qa0v58p6" path="res://Assets/Image/Materials/Suspend_Shrink.png" id="2_sva1u"]
+[ext_resource type="PackedScene" uid="uid://c2qhwt3y0tum6" path="res://Assets/Scene/JudgeLine.tscn" id="2_uchdx"]
 [ext_resource type="AudioStream" uid="uid://bfu6ni4pbrqbh" path="res://Assets/Audio/Effects/Drag.wav" id="3_lavxw"]
 [ext_resource type="Script" path="res://Assets/Script/Pause.cs" id="4_3hjki"]
 [ext_resource type="AudioStream" uid="uid://cebrxja6gc661" path="res://Assets/Audio/Effects/Flick.wav" id="4_wm3aq"]
@@ -34,6 +35,7 @@ GameModeLabel = NodePath("ComboUI/GameMode")
 ComboLabel = NodePath("ComboUI/Combo")
 BackGroundImage = NodePath("Background")
 Music = NodePath("Game/Music")
+JudgeLineScene = ExtResource("2_uchdx")
 
 [node name="Game" type="Node2D" parent="."]
 

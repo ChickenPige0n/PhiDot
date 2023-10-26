@@ -16,51 +16,55 @@ namespace Phigodot.Game
 
 		public ChartData chartData;
 #region UIReferences
-		[Export]
-		public Label ScoreLabel;
+		[Export] public Label ScoreLabel;
 		public int Score = 0;
-
-		[Export]
-		public Label SongNameLabel;
-
-		[Export]
-		public Label DiffLabel;
-
-		[Export]
-		public Label GameModeLabel;
-
-		[Export]
-		public Label ComboLabel;
+		[Export] public Label SongNameLabel;
+		[Export] public Label DiffLabel;
+		[Export] public Label GameModeLabel;
+		[Export] public Label ComboLabel;
 		public int Combo;
-
-		[Export]
-		public TextureRect BackGroundImage;
+		[Export] public TextureRect BackGroundImage;
 #endregion
+
+		[Export] public AudioStreamPlayer Music;
+
+		[Export] public PackedScene JudgeLineScene;
+
+
+		public List<JudgeLineNode> judgeLineNodes = new List<JudgeLineNode>();
+
 
 		public double PlaybackTime;
 		public double Time;
-		[Export]
-		public AudioStreamPlayer Music;
 
 		public bool isPlaying = false;
 
-		public bool LoadChart(string RootDir)
+		public void LoadChart(string RootDir)
 		{
 			string infoPath = Path.Combine(RootDir,"info.txt");
             string infoContent = File.ReadAllText(infoPath);
 			chartData = ChartData.FromString(RootDir, infoContent);
-			
-			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
-			
-			Chart = JsonConvert.DeserializeObject<RPEChart>(jsonText);
 
-			
+			// TODO: Read from JSON META
 			BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(chartData.ImageSource);
 			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir,chartData.MusicFileName));
 			SongNameLabel.Text = chartData.ChartName;
 			DiffLabel.Text = chartData.ChartDiff;
+			
+			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
+			Chart = JsonConvert.DeserializeObject<RPEChart>(jsonText);
+			
+			foreach(var Line in Chart.judgeLineList)
+			{
+				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
+				AddChild(LineInstance);
+				var Pos = LineInstance.Position;
+				Pos = new Vector2(1000,500);
+				LineInstance.Position = Pos;
+				judgeLineNodes.Add(LineInstance);
+			}
+			
 
-			return true;
 		}
 
 		// Called when the node enters the scene tree for the first time.
@@ -68,8 +72,7 @@ namespace Phigodot.Game
 		{
 			GameModeLabel.Text = "Autoplay";
 			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/35461163/");
-			bool loadSuccess = LoadChart(absPath);
-			//GD.Print(chartData.ChartName);
+			LoadChart(absPath);
 		}
 		// Called every frame. 'delta' is the elapsed time since the previous frame.
 		public override void _Process(double delta)
