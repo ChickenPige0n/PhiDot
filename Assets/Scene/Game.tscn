@@ -19,7 +19,7 @@ font_size = 40
 font = ExtResource("1_vlqfs")
 font_size = 20
 
-[node name="Game" type="Control"]
+[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "Music")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -27,29 +27,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_di470")
+ScoreLabel = NodePath("UI/Score")
+SongNameLabel = NodePath("UI/SongName")
+DiffLabel = NodePath("UI/Difficulty")
+GameModeLabel = NodePath("ComboUI/GameMode")
+ComboLabel = NodePath("ComboUI/Combo")
+BackGroundImage = NodePath("Background")
+Music = NodePath("Game/Music")
 
-[node name="Backgroun" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Game" type="Node2D" parent="."]
 
-[node name="Game" type="Node2D" parent="Backgroun"]
+[node name="Music" type="AudioStreamPlayer" parent="Game"]
 
-[node name="Music" type="AudioStreamPlayer" parent="Backgroun/Game"]
-
-[node name="Tap_or_Hold" type="AudioStreamPlayer" parent="Backgroun/Game"]
+[node name="Tap_or_Hold" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("2_clytu")
 
-[node name="Drag" type="AudioStreamPlayer" parent="Backgroun/Game"]
+[node name="Drag" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("3_lavxw")
 
-[node name="Flick" type="AudioStreamPlayer" parent="Backgroun/Game"]
+[node name="Flick" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("4_wm3aq")
 
-[node name="ProgressBar" type="ProgressBar" parent="Backgroun"]
+[node name="ProgressBar" type="ProgressBar" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -59,29 +58,29 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_g1su1")
 value = 25.0
 show_percentage = false
 
-[node name="ComboUI" type="VBoxContainer" parent="Backgroun"]
-layout_mode = 2
-offset_left = 535.0
-offset_top = 20.0
-offset_right = 616.0
-offset_bottom = 72.0
+[node name="ComboUI" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 57.0
+grow_horizontal = 2
 size_flags_horizontal = 6
 size_flags_vertical = 0
 theme_override_constants/separation = -5
 
-[node name="Combo" type="Label" parent="Backgroun/ComboUI"]
+[node name="Combo" type="Label" parent="ComboUI"]
 layout_mode = 2
 text = "200"
 label_settings = SubResource("LabelSettings_tqg14")
 horizontal_alignment = 1
 
-[node name="GameMode" type="Label" parent="Backgroun/ComboUI"]
+[node name="GameMode" type="Label" parent="ComboUI"]
 layout_mode = 2
 text = "Combo"
 label_settings = SubResource("LabelSettings_yrfku")
 horizontal_alignment = 1
 
-[node name="UI" type="MarginContainer" parent="Backgroun"]
+[node name="UI" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -93,7 +92,7 @@ theme_override_constants/margin_top = 25
 theme_override_constants/margin_right = 25
 theme_override_constants/margin_bottom = 25
 
-[node name="Pause" type="TextureButton" parent="Backgroun/UI"]
+[node name="Pause" type="TextureButton" parent="UI"]
 custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -102,7 +101,7 @@ texture_normal = ExtResource("2_sva1u")
 stretch_mode = 4
 script = ExtResource("4_3hjki")
 
-[node name="Score" type="Label" parent="Backgroun/UI"]
+[node name="Score" type="Label" parent="UI"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
@@ -110,14 +109,14 @@ text = "1000000"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
 
-[node name="SongName" type="Label" parent="Backgroun/UI"]
+[node name="SongName" type="Label" parent="UI"]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 8
 text = "Unknown"
 label_settings = ExtResource("8_5as7v")
 
-[node name="Difficulty" type="Label" parent="Backgroun/UI"]
+[node name="Difficulty" type="Label" parent="UI"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
@@ -126,3 +125,12 @@ theme_override_font_sizes/font_size = 20
 text = "SP  Lv.?"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
+
+[node name="Background" type="TextureRect" parent="."]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
