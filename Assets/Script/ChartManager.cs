@@ -13,7 +13,7 @@ namespace Phigodot.Game
 	// 主程序类
 	public partial class ChartManager : Control
 	{
-		public RPEChart Chart;
+		public ChartRPE Chart;
 
 		public ChartData chartData;
 
@@ -40,7 +40,7 @@ namespace Phigodot.Game
 		[Export] public PackedScene JudgeLineScene;
 
 
-		public List<JudgeLineNode> judgeLineNodes = new List<JudgeLineNode>();
+		public List<JudgeLineNode> judgeLineInstances = new List<JudgeLineNode>();
 
 
 		public double PlaybackTime;
@@ -91,7 +91,7 @@ namespace Phigodot.Game
 			DiffLabel.Text = chartData.ChartDiff;
 			
 			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
-			Chart = JsonConvert.DeserializeObject<RPEChart>(jsonText);
+			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
 			
 			foreach(var Line in Chart.judgeLineList)
 			{
@@ -101,7 +101,7 @@ namespace Phigodot.Game
 				LineInstance.EventLayers = Chart.judgeLineList[i].eventLayers;
 				LineInstance.AspectRatio = this.AspectRatio;
 				AddChild(LineInstance);
-				judgeLineNodes.Add(LineInstance);
+				judgeLineInstances.Add(LineInstance);
 			}
 		}
 
@@ -146,7 +146,7 @@ namespace Phigodot.Game
 				
 				double ChartTime = Chart.RealTime2ChartTime(Time);
 
-				foreach(JudgeLineNode line in judgeLineNodes)
+				foreach(JudgeLineNode line in judgeLineInstances)
 				{
 					line.ChartTime = ChartTime;
 				}

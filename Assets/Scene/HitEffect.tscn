@@ -198,7 +198,6 @@ _data = {
 }
 
 [node name="HitEffect" type="AnimatedSprite2D"]
-modulate = Color(0.839216, 0.741176, 0.360784, 1)
 sprite_frames = SubResource("SpriteFrames_k1qi2")
 autoplay = "default"
 

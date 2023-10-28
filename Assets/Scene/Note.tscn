@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://q0ardap0o4oc"]
+
+[ext_resource type="Script" path="res://Assets/Script/Note.cs" id="2_bhw6w"]
+[ext_resource type="PackedScene" uid="uid://tla4ta022aiv" path="res://Assets/Scene/HitEffect.tscn" id="3_incce"]
+
+[node name="Note" type="Sprite2D"]
+scale = Vector2(0.15, 0.15)
+script = ExtResource("2_bhw6w")
+HitEffect = ExtResource("3_incce")

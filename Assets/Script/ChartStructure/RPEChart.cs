@@ -226,7 +226,7 @@ namespace Phigodot.ChartStructure
         public EventList inclineEvents { get; set; }
     }
 
-    public class NotesItem
+    public class RPENote
     {
         public int above { get; set; }
         public int alpha { get; set; }
@@ -289,7 +289,7 @@ namespace Phigodot.ChartStructure
         public float x { get; set; }
         public float y { get; set; }
     }
-    public class JudgeLineListItem
+    public class JudgeLineJson
     {
         public int @Group { get; set; }
         public string Name { get; set; }
@@ -300,7 +300,7 @@ namespace Phigodot.ChartStructure
         public Extended extended { get; set; }
         public int father { get; set; }
         public int isCover { get; set; }
-        public List<NotesItem> notes { get; set; }
+        public List<RPENote> notes { get; set; }
         public int numOfNotes { get; set; }
         public List<PosControlItem> posControl { get; set; }
         public List<SizeControlItem> sizeControl { get; set; }
@@ -308,7 +308,7 @@ namespace Phigodot.ChartStructure
         public List<YControlItem> yControl { get; set; }
         public int zOrder { get; set; }
     }
-    public class RPEChart
+    public class ChartRPE
     {
         public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos,Godot.Vector2 StagePixelSize)
         {
@@ -322,7 +322,7 @@ namespace Phigodot.ChartStructure
         
         public META META { get; set; }
         public List<string> judgeLineGroup { get; set; }
-        public List<JudgeLineListItem> judgeLineList { get; set; }
+        public List<JudgeLineJson> judgeLineList { get; set; }
 
 
         public double RealTime2ChartTime(double realTime)
