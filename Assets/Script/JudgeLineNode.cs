@@ -13,6 +13,8 @@ public partial class JudgeLineNode : Sprite2D
 
 	public Vector2I StageSize;
 	public int count;
+	
+	public double AspectRatio = 1.666667d;
 
 	public double ChartTime
 	{
@@ -31,7 +33,7 @@ public partial class JudgeLineNode : Sprite2D
 				rotate += layer.rotateEvents.GetValByTime(value);
 			}
 
-			Position = RPEChart.RPEPos2PixelPos(new Vector2((float)xPos,-(float)yPos),StageSize) + (DisplayServer.WindowGetSize()/2);
+			Position = RPEChart.RPEPos2PixelPos(new Vector2((float)xPos,-(float)yPos),StageSize) + (StageSize/2);
 			RotationDegrees = (float)rotate;
 			var m = SelfModulate;
 			SelfModulate = new Color(m.R,m.G,m.B,(float)alpha/255.0f);
@@ -52,5 +54,7 @@ public partial class JudgeLineNode : Sprite2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
+		Vector2I windowSize = DisplayServer.WindowGetSize();
+		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
 	}
 }

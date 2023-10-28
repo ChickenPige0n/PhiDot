@@ -6,18 +6,17 @@ using System.Collections.Generic;
 using System.Threading;
 using Phigodot.ChartStructure;
 using Microsoft.VisualBasic;
+using System.Drawing;
 
 namespace Phigodot.Game
 {
 	// 主程序类
-	public partial class ChartManager : Node
+	public partial class ChartManager : Control
 	{
 		public RPEChart Chart;
 
 		public ChartData chartData;
 
-		// Pixel unit
-		public Vector2I StageSize;
 		public double AspectRatio = 1.666667d;
 
 
@@ -30,6 +29,10 @@ namespace Phigodot.Game
 		[Export] public Label ComboLabel;
 		public int Combo;
 		[Export] public Sprite2D BackGroundImage;
+
+		[Export] public ProgressBar progressBar;
+
+		[Export] public Control PauseUI;
 #endregion
 
 		[Export] public AudioStreamPlayer Music;
@@ -45,8 +48,10 @@ namespace Phigodot.Game
 
 		public bool isPlaying = false;
 
-		public void Pause(){
+		public void Pause()
+		{
 			isPlaying = !isPlaying;
+			PauseUI.Visible = !PauseUI.Visible;
         	if(isPlaying)
 			{
             	Music.Play();
@@ -58,6 +63,22 @@ namespace Phigodot.Game
         	}
 		}
 
+		public void Restart()
+		{
+			PauseUI.Visible = !PauseUI.Visible;
+			isPlaying = true;
+            Music.Play();
+			Time = 0.0;
+			PlaybackTime = 0.0;
+		}
+
+		public void Exit()
+		{
+			QueueFree();
+		}
+
+
+
 		public void LoadChart(string RootDir)
 		{
 			string infoPath = Path.Combine(RootDir,"info.txt");
@@ -65,8 +86,6 @@ namespace Phigodot.Game
 			chartData = ChartData.FromString(RootDir, infoContent);
 			// TODO: Read from JSON META
 			BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(chartData.ImageSource);
-			BackGroundImage.Scale = StageSize/BackGroundImage.Texture.GetSize();
-			BackGroundImage.Position = DisplayServer.WindowGetSize()/2;
 			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir,chartData.MusicFileName));
 			SongNameLabel.Text = chartData.ChartName;
 			DiffLabel.Text = chartData.ChartDiff;
@@ -80,8 +99,7 @@ namespace Phigodot.Game
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
 
 				LineInstance.EventLayers = Chart.judgeLineList[i].eventLayers;
-				LineInstance.StageSize = this.StageSize;
-
+				LineInstance.AspectRatio = this.AspectRatio;
 				AddChild(LineInstance);
 				judgeLineNodes.Add(LineInstance);
 			}
@@ -103,12 +121,8 @@ namespace Phigodot.Game
 		// Called when the node enters the scene tree for the first time.
 		public override void _Ready()
 		{
-			Vector2I windowSize = DisplayServer.WindowGetSize();
-			
-			StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
-
 			GameModeLabel.Text = "Autoplay";
-			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/42853068/");
+			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/35461163");
 			LoadChart(absPath);
 
 			PlayChart();
@@ -116,10 +130,20 @@ namespace Phigodot.Game
 		// Called every frame. 'delta' is the elapsed time since the previous frame.
 		public override void _Process(double delta)
 		{
+			Vector2I windowSize = DisplayServer.WindowGetSize();
+			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
+
+			BackGroundImage.Scale = StageSize/BackGroundImage.Texture.GetSize();
+
+			this.Size = StageSize;
+			this.Position = (windowSize - StageSize)/2;
+
 			if (isPlaying)
 			{
-				PlaybackTime = Music.GetPlaybackPosition();
 				Time += delta;
+				PlaybackTime = Music.GetPlaybackPosition();
+				progressBar.Value = PlaybackTime/Music.Stream.GetLength();
+				
 				double ChartTime = Chart.RealTime2ChartTime(Time);
 
 				foreach(JudgeLineNode line in judgeLineNodes)

@@ -19,7 +19,8 @@ font_size = 40
 font = ExtResource("1_vlqfs")
 font_size = 20
 
-[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "Music")]
+[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "progressBar", "PauseUI", "Music")]
+clip_contents = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,14 +34,15 @@ DiffLabel = NodePath("UI/Difficulty")
 GameModeLabel = NodePath("ComboUI/GameMode")
 ComboLabel = NodePath("ComboUI/Combo")
 BackGroundImage = NodePath("BackGround")
+progressBar = NodePath("ProgressBar")
+PauseUI = NodePath("PauseUI")
 Music = NodePath("Game/Music")
 JudgeLineScene = ExtResource("2_uchdx")
 
 [node name="BackGround" type="Sprite2D" parent="."]
 modulate = Color(0.607843, 0.607843, 0.607843, 1)
 texture_filter = 4
-position = Vector2(576, 324)
-scale = Vector2(0.6, 0.6)
+centered = false
 
 [node name="Game" type="Node2D" parent="."]
 
@@ -48,12 +50,15 @@ scale = Vector2(0.6, 0.6)
 
 [node name="Tap_or_Hold" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("2_clytu")
+max_polyphony = 100
 
 [node name="Drag" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("3_lavxw")
+max_polyphony = 100
 
 [node name="Flick" type="AudioStreamPlayer" parent="Game"]
 stream = ExtResource("4_wm3aq")
+max_polyphony = 100
 
 [node name="ProgressBar" type="ProgressBar" parent="."]
 layout_mode = 1
@@ -62,7 +67,8 @@ anchor_right = 1.0
 offset_bottom = 6.0
 grow_horizontal = 2
 theme_override_styles/fill = SubResource("StyleBoxFlat_g1su1")
-value = 25.0
+max_value = 1.0
+step = 0.0
 show_percentage = false
 
 [node name="ComboUI" type="VBoxContainer" parent="."]
@@ -132,4 +138,56 @@ text = "SP  Lv.?"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
 
+[node name="PauseUI" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="PauseUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.356863)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PauseUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="ExitButton" type="Button" parent="PauseUI/HBoxContainer"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+text = "Exit
+"
+
+[node name="RestartButton" type="Button" parent="PauseUI/HBoxContainer"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+text = "Restart"
+
+[node name="ResumeButton" type="Button" parent="PauseUI/HBoxContainer"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+text = "Continue"
+
 [connection signal="pressed" from="UI/Pause" to="." method="Pause"]
+[connection signal="pressed" from="PauseUI/HBoxContainer/ExitButton" to="." method="Exit"]
+[connection signal="pressed" from="PauseUI/HBoxContainer/RestartButton" to="." method="Restart"]
+[connection signal="pressed" from="PauseUI/HBoxContainer/ResumeButton" to="." method="Pause"]
