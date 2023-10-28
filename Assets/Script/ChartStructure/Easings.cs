@@ -193,35 +193,35 @@ namespace Phigodot.ChartStructure
         public delegate double EasingFunc(double x);
 
         public static EasingFunc[] easeFuncs = {
-            new EasingFunc(EaseLinear),
-            new EasingFunc(EaseLinear),
-            new EasingFunc(EaseOutSin),
-            new EasingFunc(EaseInSin),
-            new EasingFunc(EaseOutQuad),
-            new EasingFunc(EaseInQuad),//5
-            new EasingFunc(EaseInOutSin),
-            new EasingFunc(EaseInOutQuad),
-            new EasingFunc(EaseOutCubic),
-            new EasingFunc(EaseInCubic),
-            new EasingFunc(EaseOutQuart),//10
-            new EasingFunc(EaseInQuart),
-            new EasingFunc(EaseInOutCubic),
-            new EasingFunc(EaseInOutQuart),
-            new EasingFunc(EaseOutQuint),
-            new EasingFunc(EaseInQuint),//15
-            new EasingFunc(EaseOutExpo),
-            new EasingFunc(EaseInExpo),
-            new EasingFunc(EaseOutCirc),
-            new EasingFunc(EaseInCirc),
-            new EasingFunc(EaseOutBack),//20
-            new EasingFunc(EaseInBack),
-            new EasingFunc(EaseInOutCirc),
-            new EasingFunc(EaseInOutBack),
-            new EasingFunc(EaseOutElastic),
-            new EasingFunc(EaseInElastic),//25
-            new EasingFunc(EaseOutBounce),
-            new EasingFunc(EaseInBounce),
-            new EasingFunc(EaseInOutBounce)
+            new(EaseLinear),
+            new(EaseLinear),
+            new(EaseOutSin),
+            new(EaseInSin),
+            new(EaseOutQuad),
+            new(EaseInQuad),//5
+            new(EaseInOutSin),
+            new(EaseInOutQuad),
+            new(EaseOutCubic),
+            new(EaseInCubic),
+            new(EaseOutQuart),//10
+            new(EaseInQuart),
+            new(EaseInOutCubic),
+            new(EaseInOutQuart),
+            new(EaseOutQuint),
+            new(EaseInQuint),//15
+            new(EaseOutExpo),
+            new(EaseInExpo),
+            new(EaseOutCirc),
+            new(EaseInCirc),
+            new(EaseOutBack),//20
+            new(EaseInBack),
+            new(EaseInOutCirc),
+            new(EaseInOutBack),
+            new(EaseOutElastic),
+            new(EaseInElastic),//25
+            new(EaseOutBounce),
+            new(EaseInBounce),
+            new(EaseInOutBounce)
         };
     }
 }

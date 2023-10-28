@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -51,81 +52,12 @@ namespace Phigodot.ChartStructure
             bezierPoints = new BezierPoints() { 0.0f, 0.0f, 0.0f, 0.0f };
         }
 
-
-        public int GetMontonicity()
-        {
-            if(end > start)
-            {
-                return 1;
-            }
-            else if(end < start)
-            {
-                return -1;
-            }
-            return 0;
-        }
-        public double GetDuration()
-        {
-            return endTime.GetTime() - startTime.GetTime();
-        }
-        public double GetVelocity()
-        {
-            return (end-start)/GetDuration();
-        }
-
-
-
-        public EventList Cut(double density)
-        {
-            double duration = 1.0 / density;
-            double startTimeAsDouble = startTime;
-            double endTimeAsDouble = endTime;
-            double timeRange = endTimeAsDouble - startTimeAsDouble;
-            float valueRange = end - start;
-            double easingFuncValue;
-
-            EventList cuttedEvents = new EventList();
-
-            EasingFunc easingFunc = Easings.easeFuncs[easingType];
-
-            int maxIndex = (int)Math.Ceiling(timeRange / duration) - 1;
-
-            float lastValue = start;
-
-            for (int i = 0; i <= maxIndex; i++)
-            {
-                double t0 = startTimeAsDouble + duration * i;
-                double t1 = t0 + duration;
-
-                RPEEvent newEvent = new RPEEvent();
-
-                newEvent.startTime = (Time)t0;
-                newEvent.endTime = (Time)t1;
-
-                newEvent.start = lastValue;
-
-                double elapsed = t1 - startTimeAsDouble;
-                if (elapsed < 0) elapsed = 0;
-                else if (elapsed >= timeRange) elapsed = timeRange;
-
-                easingFuncValue = easingFunc(elapsed / timeRange);
-
-                newEvent.end = start + (float)(easingFuncValue * valueRange);
-
-                lastValue = newEvent.end;
-
-
-                cuttedEvents.Add(newEvent);
-            }
-
-            return cuttedEvents;
-        }
-
         public double GetCurVal(double t)
         {
             if (t > startTime && t < endTime)
             {
-                return (end - start) * Easings.easeFuncs[easingType]((t - startTime) / (endTime - startTime));
+                var easeResult = easeFuncs[easingType]((t - startTime) / (endTime - startTime));
+                return (start * (1-easeResult)) + (end * easeResult);
             }
             else if (Math.Abs(t - startTime)<=0.01 || Math.Abs(t - endTime)<=0.01)
             {
@@ -133,7 +65,7 @@ namespace Phigodot.ChartStructure
             }
             else
             {
-                return double.NaN;
+                return end;
             }
         }
 
@@ -160,31 +92,7 @@ namespace Phigodot.ChartStructure
 
     public class Time : List<int>
     {
-        public static Time? Parse(string t)
-        {
-            double result;
-            if (double.TryParse(t,out result))
-            {
-                return (Time)result;
-            }
-            else
-            {
-                string part1 = t.Split(':')[0];
-                string part2 = t.Split(":")[1].Split('/')[0];
-                string part3 = t.Split(":")[1].Split('/')[1];
-
-                int num1;
-                int num2;
-                int num3;
-                if (int.TryParse(part1, out num1) && int.TryParse(part2, out num2) && int.TryParse(part3, out num3))
-                {
-                    return new Time() { num1, num2, num3 };
-                }
-            }
-            return null;
-        }
-
-        public double GetTime()
+        public double AsDouble()
         {
             return this[2] == 0 ? 0 : (double)this[0] + ((double)this[1] / (double)this[2]);
         }
@@ -210,14 +118,10 @@ namespace Phigodot.ChartStructure
             
             return new Time() { wholePart, numerator, denominator };
         }
-
-
         private static int GetGcd(int a, int b)
         {
             return b == 0 ? a : GetGcd(b, a % b);
         }
-
-
     }
 
 
@@ -236,87 +140,23 @@ namespace Phigodot.ChartStructure
         {
             foreach (RPEEvent e in this)
             {
-                if (time >= e.startTime && time <= e.endTime)
+                var i = this.IndexOf(e);
+                if (time >=e.startTime && time <= e.endTime)
+                {
+                    return e.GetCurVal(time);
+                }
+                if(i==this.Count-1) break;
+                else if(time>=e.endTime&&time<=this[i+1].startTime)
                 {
                     return e.GetCurVal(time);
                 }
             }
-
-            return double.NaN; // 如果列表为空，则返回默认值
-        }
-
-
-        private void GetEventInRange(int baseIndex, int eventCount, out double[] values, out double[] beatTimes, out double beatTimeRange)
-        {
-            EventList Events = this;
-
-            values = new double[eventCount + 1];
-            beatTimes = new double[eventCount];
-
-            for (int outIndex = baseIndex; outIndex < baseIndex + eventCount; outIndex++)
-            {
-                // 获取当前事件的start值和前一个事件到当前事件的duration
-                values[outIndex - baseIndex] = Events[outIndex].start;
-                beatTimes[outIndex - baseIndex] = Events[outIndex].GetDuration();
-            }
-
-            // 最后一个事件的end值存储到values数组的最后一个位置
-            values[^1] = Events[baseIndex + eventCount - 1].end;
-
-            // 计算beatTimeRange
-            beatTimeRange = Events[baseIndex + eventCount - 1].endTime.GetTime() - Events[baseIndex].startTime.GetTime();
-        }
-
-        private void ReplaceEvent(RPEEvent eventToAdd, int baseIndex, int removeCount)
-        {
-            EventList eventsToBeReplaced = this;
-            eventsToBeReplaced.RemoveRange(baseIndex, removeCount);
-            eventsToBeReplaced.Insert(baseIndex, eventToAdd);
-        }
-
-        public void CutEventInRange(int startIndex, int endIndex, int density)
-        {
-            EventList events = this;
-
-            EventList cutted = new EventList { };
-
-            var range = events.GetRange(startIndex, endIndex - startIndex +1);
-            
-            foreach (RPEEvent e in range)
-            {
-                cutted.AddRange(e.Cut(density));
-            }
-
-            events.RemoveRange(startIndex, endIndex - startIndex + 1);
-
-            events.InsertRange(startIndex, cutted);
-        }
-
-        public EventList GetEventInTimeRange(double startTime, double endTime)
-        {
-            EventList events = this;
-
-            EventList eventsInTime = new EventList { };
-
-            foreach (RPEEvent e in events)
-            {
-                if ((e.endTime >= startTime && e.endTime <= endTime) || (e.startTime >= startTime && e.startTime <= endTime))
-                {
-                    eventsInTime.Add(e);
-                }
-            }
-            return eventsInTime;
-        }
-
-        public (int,int) GetEventIndexRangeByTime(double startTime, double endTime)
-        {
-            EventList list = GetEventInTimeRange(startTime, endTime);
-            return (IndexOf(list[0]), IndexOf(list[^1]));
+            return 0;
         }
     }
 
 
-    public class EventLayersItem
+    public class EventLayer
     {
         [JsonIgnore]
         private EventList _alphaEvents;
@@ -456,7 +296,7 @@ namespace Phigodot.ChartStructure
         public string Texture { get; set; }
         public List<AlphaControlItem> alphaControl { get; set; }
         public float bpmfactor { get; set; }
-        public List<EventLayersItem> eventLayers { get; set; }
+        public List<EventLayer> eventLayers { get; set; }
         public Extended extended { get; set; }
         public int father { get; set; }
         public int isCover { get; set; }
@@ -470,9 +310,50 @@ namespace Phigodot.ChartStructure
     }
     public class RPEChart
     {
-        public List<BPMListItem> BPMList { get; set; }
+        public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos,Godot.Vector2 StagePixelSize)
+        {
+            RPEPos.X *= StagePixelSize.X/1350.0f;
+            RPEPos.Y *= StagePixelSize.Y/900.0f;
+            return RPEPos;
+        }
+
+
+        public List<BPMListItem> BPMList;
+        
         public META META { get; set; }
         public List<string> judgeLineGroup { get; set; }
         public List<JudgeLineListItem> judgeLineList { get; set; }
+
+
+        public double RealTime2ChartTime(double realTime)
+        {
+            List<double> bpmSeconds = new List<double>();
+            foreach(BPMListItem BPMInfo in BPMList){
+                int i = BPMList.IndexOf(BPMInfo);
+                if (i < BPMList.Count - 1){
+                    double dChartTime = BPMList[i+1].startTime - BPMInfo.startTime;
+                    bpmSeconds.Add(dChartTime*60/BPMInfo.bpm);
+                }else{
+                    bpmSeconds.Add(999999.0);
+                }
+            }
+
+
+
+            double second = 0.0;
+            double last = 0.0;
+            foreach(double t in bpmSeconds)
+            {
+                second += t;
+                if(t>=realTime)
+                {
+                    double timeInBPMRange = realTime - last;
+                    var curBPMInfo = BPMList[bpmSeconds.IndexOf(t)];
+                    return (timeInBPMRange*curBPMInfo.bpm/60) + curBPMInfo.startTime;
+                }
+                last = second;
+            }
+            return 0;
+        }
     }
 }

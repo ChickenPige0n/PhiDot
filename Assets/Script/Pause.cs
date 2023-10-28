@@ -1,33 +1,17 @@
 using Godot;
+using Phigodot.Game;
 using System.Threading;
 
 public partial class Pause : TextureButton
 {
-    private int Click = 0;  // 计时器缓存
+    private bool Paused = false;  // 计时器缓存
 
-    public void Timer()  // 计时器函数
-    {
-        GD.Print("计时器");
-        Thread.Sleep(500);
-        if (Click != 0)
-        {
-            GD.Print("清空");
-            Click = 0;
-        }
-    }
+    [Export]
+    public ChartManager chartManager;
 
     public void Pause_Game()  // 暂停游戏函数
     {
-        Click++;
-        if (Click >= 2)
-        {
-            GD.Print("暂停");
-            Click = 0;
-        }
-        else
-        {
-            new Thread(new ThreadStart(Timer)).Start();
-        }
+        
     }
 
     // Called when the node enters the scene tree for the first time.
