@@ -1,0 +1,219 @@
+[gd_scene load_steps=42 format=3 uid="uid://tla4ta022aiv"]
+
+[ext_resource type="Texture2D" uid="uid://c7iuj0qwrmevp" path="res://Assets/Image/Materials/HitEffect/img-1.png" id="1_mv8yn"]
+[ext_resource type="Texture2D" uid="uid://duhbfh06g48x" path="res://Assets/Image/Materials/HitEffect/img-2.png" id="2_qtka0"]
+[ext_resource type="Texture2D" uid="uid://pjymtdb08fej" path="res://Assets/Image/Materials/HitEffect/img-3.png" id="3_hg20u"]
+[ext_resource type="Texture2D" uid="uid://c3yk5gdor4jvh" path="res://Assets/Image/Materials/HitEffect/img-4.png" id="4_sn482"]
+[ext_resource type="Texture2D" uid="uid://bp7fqg6ek1m0a" path="res://Assets/Image/Materials/HitEffect/img-5.png" id="5_tbtlb"]
+[ext_resource type="Texture2D" uid="uid://bu10e3jtbyunf" path="res://Assets/Image/Materials/HitEffect/img-6.png" id="6_s0ogk"]
+[ext_resource type="Texture2D" uid="uid://cea4st5yig83u" path="res://Assets/Image/Materials/HitEffect/img-7.png" id="7_bcces"]
+[ext_resource type="Texture2D" uid="uid://daxptcaw1n4xt" path="res://Assets/Image/Materials/HitEffect/img-8.png" id="8_epbmf"]
+[ext_resource type="Texture2D" uid="uid://dr3q2vsn4eyd1" path="res://Assets/Image/Materials/HitEffect/img-9.png" id="9_bu6o2"]
+[ext_resource type="Texture2D" uid="uid://kwuypv02tddb" path="res://Assets/Image/Materials/HitEffect/img-10.png" id="10_56l3v"]
+[ext_resource type="Texture2D" uid="uid://d28ox8fmcp6o6" path="res://Assets/Image/Materials/HitEffect/img-11.png" id="11_e77r8"]
+[ext_resource type="Texture2D" uid="uid://ic4453g8grey" path="res://Assets/Image/Materials/HitEffect/img-12.png" id="12_eq8le"]
+[ext_resource type="Texture2D" uid="uid://b721o18f38mih" path="res://Assets/Image/Materials/HitEffect/img-13.png" id="13_nsqrj"]
+[ext_resource type="Texture2D" uid="uid://cavybe77or4i7" path="res://Assets/Image/Materials/HitEffect/img-14.png" id="14_1x4ua"]
+[ext_resource type="Texture2D" uid="uid://ddj2s4ay6jycr" path="res://Assets/Image/Materials/HitEffect/img-15.png" id="15_eu1us"]
+[ext_resource type="Texture2D" uid="uid://b5by7dyq42281" path="res://Assets/Image/Materials/HitEffect/img-16.png" id="16_ulbys"]
+[ext_resource type="Texture2D" uid="uid://doldrk2ifms4t" path="res://Assets/Image/Materials/HitEffect/img-17.png" id="17_qkhdg"]
+[ext_resource type="Texture2D" uid="uid://7n03mriym1ru" path="res://Assets/Image/Materials/HitEffect/img-18.png" id="18_m8vu6"]
+[ext_resource type="Texture2D" uid="uid://dqmkkr4jouaes" path="res://Assets/Image/Materials/HitEffect/img-19.png" id="19_c4005"]
+[ext_resource type="Texture2D" uid="uid://c6ua5goywcngl" path="res://Assets/Image/Materials/HitEffect/img-20.png" id="20_mbgl8"]
+[ext_resource type="Texture2D" uid="uid://3yscbrbqd7ao" path="res://Assets/Image/Materials/HitEffect/img-21.png" id="21_sdx2v"]
+[ext_resource type="Texture2D" uid="uid://dwo2kh2ggiwq1" path="res://Assets/Image/Materials/HitEffect/img-22.png" id="22_288kf"]
+[ext_resource type="Texture2D" uid="uid://7oyk5kcxcfcx" path="res://Assets/Image/Materials/HitEffect/img-23.png" id="23_x07t2"]
+[ext_resource type="Texture2D" uid="uid://btroe0m23cg73" path="res://Assets/Image/Materials/HitEffect/img-24.png" id="24_xwnpt"]
+[ext_resource type="Texture2D" uid="uid://c8vm6wrr3jmhs" path="res://Assets/Image/Materials/HitEffect/img-25.png" id="25_b0pr0"]
+[ext_resource type="Texture2D" uid="uid://blw1jfs4a1nq2" path="res://Assets/Image/Materials/HitEffect/img-26.png" id="26_1eqqf"]
+[ext_resource type="Texture2D" uid="uid://fffgervectgo" path="res://Assets/Image/Materials/HitEffect/img-27.png" id="27_tnhu6"]
+[ext_resource type="Texture2D" uid="uid://doxwoykmrtgr5" path="res://Assets/Image/Materials/HitEffect/img-28.png" id="28_f7gdd"]
+[ext_resource type="Texture2D" uid="uid://cr1fhxlg0abpb" path="res://Assets/Image/Materials/HitEffect/img-29.png" id="29_wq7xu"]
+[ext_resource type="Texture2D" uid="uid://dp5tfvpsej6em" path="res://Assets/Image/Materials/HitEffect/img-30.png" id="30_axk71"]
+[ext_resource type="Texture2D" uid="uid://b638lyqpqf7s5" path="res://Assets/Image/Materials/HitEffect/HitParticle.bmp" id="31_6muro"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_k1qi2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_mv8yn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_qtka0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_hg20u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_sn482")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_tbtlb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_s0ogk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_bcces")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_epbmf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_bu6o2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_56l3v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_e77r8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_eq8le")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_nsqrj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_1x4ua")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_eu1us")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_ulbys")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_qkhdg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_m8vu6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_c4005")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_mbgl8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_sdx2v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_288kf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_x07t2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_xwnpt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_b0pr0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_1eqqf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_tnhu6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_f7gdd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_wq7xu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_axk71")
+}],
+"loop": false,
+"name": &"default",
+"speed": 60.0
+}]
+
+[sub_resource type="Gradient" id="Gradient_jdiqp"]
+offsets = PackedFloat32Array(0, 0.721311, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.760784, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_8cxok"]
+gradient = SubResource("Gradient_jdiqp")
+
+[sub_resource type="Curve" id="Curve_tcid3"]
+_data = [Vector2(0, 1), 0.0, -1.76609, 0, 0, Vector2(1, 0.175824), -0.0457873, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_4aofr"]
+curve = SubResource("Curve_tcid3")
+
+[sub_resource type="Curve" id="Curve_t7wgv"]
+_data = [Vector2(0, 1), 0.0, -0.0173512, 0, 0, Vector2(1, 0.78022), -0.699301, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_1i0mr"]
+curve = SubResource("Curve_t7wgv")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_eebwi"]
+particle_flag_disable_z = true
+emission_shape_scale = Vector3(0, 0, 0)
+radial_velocity_min = 800.0
+radial_velocity_max = 1300.0
+radial_velocity_curve = SubResource("CurveTexture_4aofr")
+gravity = Vector3(0, 0, 0)
+scale_min = 0.4
+scale_max = 0.5
+scale_curve = SubResource("CurveTexture_1i0mr")
+color_ramp = SubResource("GradientTexture1D_8cxok")
+
+[sub_resource type="Animation" id="Animation_ui37g"]
+resource_name = "Particle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GPUParticles2D:emitting")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.1),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"queue_free"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_6a6q1"]
+_data = {
+"Particle": SubResource("Animation_ui37g")
+}
+
+[node name="HitEffect" type="AnimatedSprite2D"]
+modulate = Color(0.839216, 0.741176, 0.360784, 1)
+sprite_frames = SubResource("SpriteFrames_k1qi2")
+autoplay = "default"
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 4
+process_material = SubResource("ParticleProcessMaterial_eebwi")
+texture = ExtResource("31_6muro")
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 60
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_6a6q1")
+}
+autoplay = "Particle"
