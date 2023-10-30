@@ -194,7 +194,12 @@ namespace Phigodot.ChartStructure
 
     public class SpeedEventList : List<RPESpeedEvent>
     {
-        public void Integral()
+        /// <summary>
+        /// 获取一段时间内速度积分
+        /// </summary>
+        /// <param name="startTime">开始时间(单位为秒)</param>
+        /// <param name="endTime">结束时间(单位为秒)</param>
+        public void Integral(double startTime, double endTime)
         {
             // TODO
         }
@@ -414,7 +419,9 @@ namespace Phigodot.ChartStructure
         [JsonPropertyName("judgeLineList")]
         public List<JudgeLineJson> JudgeLineList { get; set; }
 
-
+        /// <summary>
+        /// 将拍数转换为秒数
+        /// </summary>
         public void CalcRealTime()
         {
             foreach(var line in JudgeLineList){
@@ -453,7 +460,9 @@ namespace Phigodot.ChartStructure
             }
         }
 
-
+        /// <summary>
+        /// 将拍数转换为秒数
+        /// </summary>
         public static double BeatTime2RealTime(List<BPMListItem> bPMList, double beatTime)
         {
             List<double> bpmSeconds = new List<double>();
@@ -489,6 +498,9 @@ namespace Phigodot.ChartStructure
 
         }
 
+        /// <summary>
+        /// 将秒数转换为拍数
+        /// </summary>
         public double RealTime2BeatTime(double realTime)
         {
             List<double> bpmSeconds = new List<double>();
