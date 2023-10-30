@@ -1,9 +1,0 @@
-#
-Name: GLITCHED UNIVERSE
-Path: 35461163
-Song: 35461163.mp3
-Picture: 35461163.png
-Chart: 35461163.json
-Level: ERROR
-Composer: Sakuzyo
-Charter: ChickenPige0n
