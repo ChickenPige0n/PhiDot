@@ -14,6 +14,7 @@ namespace Phigodot.Game
 	}
 	public partial class NoteNode : Sprite2D
 	{
+		[Export] public Label floorPos;
 		public RPENote NoteInfo;
 		private bool _judged = false;
 		public bool Judged
@@ -36,7 +37,7 @@ namespace Phigodot.Game
 
 		public void Judge(JudgeType type = JudgeType.perfect)
 		{
-			var effectInstance = HitEffect.Instantiate<Sprite2D>();
+			var effectInstance = HitEffect.Instantiate<AnimatedSprite2D>();
 			switch (type) {
 				case JudgeType.perfect:
 					effectInstance.Modulate = PerfectColor;
@@ -50,5 +51,10 @@ namespace Phigodot.Game
 			AddChild(effectInstance);
 			Judged = true;
 		}
-	}
+
+        public override void _Process(double delta)
+        {
+            
+        }
+    }
 }

@@ -93,13 +93,20 @@ namespace Phigodot.Game
 			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
 			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
 			
-			foreach(var Line in Chart.judgeLineList)
+			foreach(var Line in Chart.JudgeLineList)
 			{
-				int i = Chart.judgeLineList.IndexOf(Line);
+				int i = Chart.JudgeLineList.IndexOf(Line);
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
+				
+				
+				LineInstance.LineIndex = i;
 
-				LineInstance.EventLayers = Chart.judgeLineList[i].eventLayers;
+				LineInstance.Chart       = Chart;
+				LineInstance.Notes       = Chart.JudgeLineList[i].Notes;
 				LineInstance.AspectRatio = this.AspectRatio;
+
+
+
 				AddChild(LineInstance);
 				judgeLineInstances.Add(LineInstance);
 			}
@@ -122,7 +129,7 @@ namespace Phigodot.Game
 		public override void _Ready()
 		{
 			GameModeLabel.Text = "Autoplay";
-			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/35461163");
+			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/17666805");
 			LoadChart(absPath);
 
 			PlayChart();
@@ -144,7 +151,7 @@ namespace Phigodot.Game
 				PlaybackTime = Music.GetPlaybackPosition();
 				progressBar.Value = PlaybackTime/Music.Stream.GetLength();
 				
-				double ChartTime = Chart.RealTime2ChartTime(Time);
+				double ChartTime = Chart.RealTime2BeatTime(Time);
 
 				foreach(JudgeLineNode line in judgeLineInstances)
 				{

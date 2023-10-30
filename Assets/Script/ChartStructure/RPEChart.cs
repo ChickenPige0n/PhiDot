@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Godot;
 using static Phigodot.ChartStructure.Easings;
 
 //generated automatically
@@ -14,72 +15,95 @@ namespace Phigodot.ChartStructure
 
     public class BPMListItem
     {
-        public float bpm { get; set; }
-        public Time startTime { get; set; }
+        [JsonPropertyName("bpm")]
+        public float BPM { get; set; }
+        [JsonPropertyName("startTime")]
+        public Time StartTime { get; set; }
     }
     public class META
     {
         public int RPEVersion { get; set; }
-        public string background { get; set; }
-        public string charter { get; set; }
-        public string composer { get; set; }
-        public string id { get; set; }
-        public string level { get; set; }
-        public string name { get; set; }
-        public int offset { get; set; }
-        public string song { get; set; }
+
+        [JsonPropertyName("background")]
+        public string Background { get; set; }
+        [JsonPropertyName("charter")]
+        public string Charter { get; set; }
+        [JsonPropertyName("composer")]
+        public string Composer { get; set; }
+        [JsonPropertyName("id")]
+        public string ID { get; set; }
+        [JsonPropertyName("level")]
+        public string Difficulty { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        [JsonPropertyName("offset")]
+        public int Offset { get; set; }
+        [JsonPropertyName("song")]
+        public string MusicFileName { get; set; }
     }
     public class AlphaControlItem
     {
         public AlphaControlItem(float xx)
         {
-            alpha = 1.0f;
-            easing = 1;
-            x = xx;
+            Alpha = 1.0f;
+            Easing = 1;
+            X = xx;
         }
-        public float alpha { get; set; }
-        public int easing { get; set; }
-        public float x { get; set; }
+        [JsonPropertyName("alpha")]
+        public float Alpha { get; set; }
+        [JsonPropertyName("easing")]
+        public int Easing { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
     }
     public class RPEEvent
     {
         public RPEEvent()
         {
-            linkgroup = 0;
-            easingLeft = 0;
-            easingRight = 1;
-            bezier = 0;
-            bezierPoints = new BezierPoints() { 0.0f, 0.0f, 0.0f, 0.0f };
+            LinkGroup = 0;
+            EasingLeft = 0;
+            EasingRight = 1;
+            Bezier = 0;
+            BezierPoints = new BezierPoints() { 0.0f, 0.0f, 0.0f, 0.0f };
         }
 
         public double GetCurVal(double t)
         {
-            if (t > startTime && t < endTime)
+            if (t > StartTime && t < EndTime)
             {
-                var easeResult = easeFuncs[easingType]((t - startTime) / (endTime - startTime));
-                return (start * (1-easeResult)) + (end * easeResult);
+                var easeResult = easeFuncs[EasingType]((t - StartTime) / (EndTime - StartTime));
+                return (Start * (1 - easeResult)) + (End * easeResult);
             }
-            else if (Math.Abs(t - startTime)<=0.01 || Math.Abs(t - endTime)<=0.01)
+            else if (Math.Abs(t - StartTime) <= 0.01 || Math.Abs(t - EndTime) <= 0.01)
             {
-                return Math.Abs(t - startTime) <= 0.01 ? start : end;
+                return Math.Abs(t - StartTime) <= 0.01 ? Start : End;
             }
             else
             {
-                return end;
+                return End;
             }
         }
 
-
-        public int bezier { get; set; }
-        public BezierPoints bezierPoints { get; set; }
-        public float easingLeft { get; set; }
-        public float easingRight { get; set; }
-        public int easingType { get; set; }
-        public float end { get; set; }
-        public Time endTime { get; set; }
-        public int linkgroup { get; set; }
-        public float start { get; set; }
-        public Time startTime { get; set; }
+        [JsonPropertyName("bezier")]
+        public int Bezier { get; set; }
+        [JsonPropertyName("bezierPoints")]
+        public BezierPoints BezierPoints { get; set; }
+        [JsonPropertyName("easingLeft")]
+        public float EasingLeft { get; set; }
+        [JsonPropertyName("easingRight")]
+        public float EasingRight { get; set; }
+        [JsonPropertyName("easingType")]
+        public int EasingType { get; set; }
+        [JsonPropertyName("end")]
+        public float End { get; set; }
+        [JsonPropertyName("endTime")]
+        public Time EndTime { get; set; }
+        [JsonPropertyName("linkgroup")]
+        public int LinkGroup { get; set; }
+        [JsonPropertyName("start")]
+        public float Start { get; set; }
+        [JsonPropertyName("startTime")]
+        public Time StartTime { get; set; }
     }
 
 
@@ -115,23 +139,35 @@ namespace Phigodot.ChartStructure
             numerator /= gcd;
             denominator /= gcd;
 
-            
+
             return new Time() { wholePart, numerator, denominator };
         }
         private static int GetGcd(int a, int b)
         {
             return b == 0 ? a : GetGcd(b, a % b);
         }
+
+        [JsonIgnore]
+        public double RealTime;
     }
 
 
-    public class SpeedEventsItem
+    public class RPESpeedEvent
     {
-        public float end { get; set; }
-        public Time endTime { get; set; }
-        public int linkgroup { get; set; }
-        public float start { get; set; }
-        public Time startTime { get; set; }
+        public int EasingType { get; set; }
+        [JsonPropertyName("end")]
+        public float End { get; set; }
+        [JsonPropertyName("endTime")]
+        public Time EndTime { get; set; }
+        [JsonPropertyName("linkgroup")]
+        public int LinkGroup { get; set; }
+        [JsonPropertyName("start")]
+        public float Start { get; set; }
+        [JsonPropertyName("startTime")]
+        public Time StartTime { get; set; }
+
+        [JsonIgnore]
+        public double floorPosition = 0;
     }
 
     public class EventList : List<RPEEvent>
@@ -141,17 +177,26 @@ namespace Phigodot.ChartStructure
             foreach (RPEEvent e in this)
             {
                 var i = this.IndexOf(e);
-                if (time >=e.startTime && time <= e.endTime)
+                if (time >= e.StartTime && time <= e.EndTime)
                 {
                     return e.GetCurVal(time);
                 }
-                if(i==this.Count-1) break;
-                else if(time>=e.endTime&&time<=this[i+1].startTime)
+                if (i == this.Count - 1) break;
+                else if (time >= e.EndTime && time <= this[i + 1].StartTime)
                 {
                     return e.GetCurVal(time);
                 }
             }
             return 0;
+        }
+    }
+
+
+    public class SpeedEventList : List<RPESpeedEvent>
+    {
+        public void Integral()
+        {
+            // TODO
         }
     }
 
@@ -167,33 +212,38 @@ namespace Phigodot.ChartStructure
         [JsonIgnore]
         private EventList _rotateEvents;
         [JsonIgnore]
-        private List<SpeedEventsItem> _speedEvents;
+        private SpeedEventList _speedEvents;
 
-        public EventList alphaEvents
+
+        [JsonPropertyName("alphaEvents")]
+        public EventList AlphaEvents
         {
             get { return _alphaEvents; }
             set { _alphaEvents = value; }
         }
-
-        public EventList moveXEvents
+        [JsonPropertyName("moveXEvents")]
+        public EventList MoveXEvents
         {
             get { return _moveXEvents; }
             set { _moveXEvents = value; }
         }
 
-        public EventList moveYEvents
+        [JsonPropertyName("moveYEvents")]
+        public EventList MoveYEvents
         {
             get { return _moveYEvents; }
             set { _moveYEvents = value; }
         }
 
-        public EventList rotateEvents
+        [JsonPropertyName("rotateEvents")]
+        public EventList RotateEvents
         {
             get { return _rotateEvents; }
             set { _rotateEvents = value; }
         }
 
-        public List<SpeedEventsItem> speedEvents
+        [JsonPropertyName("speedEvents")]
+        public SpeedEventList SpeedEvents
         {
             get { return _speedEvents; }
             set { _speedEvents = value; }
@@ -202,22 +252,23 @@ namespace Phigodot.ChartStructure
         //<summary>
         //1:moveX 2:moveY 3:rotation 4:alpha 5:speed
         //</summary>
-        
 
-        
-        
+
+
+
     }
 
 
     public class Extended
     {
-        public Extended() {
+        public Extended()
+        {
             RPEEvent defaultInc = new RPEEvent();
-            defaultInc.start = 0.0f;
-            defaultInc.end = 0.0f;
-            defaultInc.easingType = 1;
-            defaultInc.startTime = new Time { 0, 0, 1 };
-            defaultInc.endTime = new Time { 1, 0, 1 };
+            defaultInc.Start = 0.0f;
+            defaultInc.End = 0.0f;
+            defaultInc.EasingType = 1;
+            defaultInc.StartTime = new Time { 0, 0, 1 };
+            defaultInc.EndTime = new Time { 1, 0, 1 };
             inclineEvents = new EventList
             {
                 defaultInc
@@ -228,112 +279,229 @@ namespace Phigodot.ChartStructure
 
     public class RPENote
     {
-        public int above { get; set; }
-        public int alpha { get; set; }
-        public Time endTime { get; set; }
-        public int isFake { get; set; }
-        public float positionX { get; set; }
-        public float size { get; set; }
-        public float speed { get; set; }
-        public Time startTime { get; set; }
-        public int type { get; set; }
-        public float visibleTime { get; set; }
-        public float yOffset { get; set; }
+        [JsonPropertyName("above")]
+        public int Above { get; set; }
+        [JsonPropertyName("alpha")]
+        public int Alpha { get; set; }
+        [JsonPropertyName("endTime")]
+        public Time EndTime { get; set; }
+        [JsonPropertyName("isFake")]
+        public int IsFake { get; set; }
+        [JsonPropertyName("positionX")]
+        public float PositionX { get; set; }
+        [JsonPropertyName("size")]
+        public float Size { get; set; }
+        [JsonPropertyName("speed")]
+        public float Speed { get; set; }
+        [JsonPropertyName("startTime")]
+        public Time StartTime { get; set; }
+        [JsonPropertyName("type")]
+        public int Type { get; set; }
+        [JsonPropertyName("visibleTime")]
+        public float VisibleTime { get; set; }
+        [JsonPropertyName("yOffset")]
+        public float YOffset { get; set; }
     }
 
     public class PosControlItem
     {
         public PosControlItem(float xx)
         {
-            pos = 1.0f;
-            easing = 1;
-            x = xx;
+            Pos = 1.0f;
+            Easing = 1;
+            X = xx;
         }
-        public int easing { get; set; }
-        public float pos { get; set; }
-        public float x { get; set; }
+        [JsonPropertyName("easing")]
+        public int Easing { get; set; }
+        [JsonPropertyName("pos")]
+        public float Pos { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
     }
     public class SizeControlItem
     {
         public SizeControlItem(float xx)
         {
-            size = 1.0f;
-            easing = 1;
-            x = xx;
+            Size = 1.0f;
+            Easing = 1;
+            X = xx;
         }
-        public int easing { get; set; }
-        public float size { get; set; }
-        public float x { get; set; }
+        [JsonPropertyName("easing")]
+        public int Easing { get; set; }
+        [JsonPropertyName("size")]
+        public float Size { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
     }
     public class SkewControlItem
     {
         public SkewControlItem(float xx)
         {
-            skew = 0.0f;
-            easing = 1;
-            x = xx;
+            Skew = 0.0f;
+            Easing = 1;
+            X = xx;
         }
-        public int easing { get; set; }
-        public float skew { get; set; }
-        public float x { get; set; }
+        [JsonPropertyName("easing")]
+        public int Easing { get; set; }
+        [JsonPropertyName("skew")]
+        public float Skew { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
     }
     public class YControlItem
     {
         public YControlItem(float xx)
         {
-            y = 1.0f;
-            easing = 1;
-            x = xx;
+            Y = 1.0f;
+            Easing = 1;
+            X = xx;
         }
-        public int easing { get; set; }
-        public float x { get; set; }
-        public float y { get; set; }
+        [JsonPropertyName("easing")]
+        public int Easing { get; set; }
+        [JsonPropertyName("y")]
+        public float Y { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
     }
     public class JudgeLineJson
     {
         public int @Group { get; set; }
         public string Name { get; set; }
         public string Texture { get; set; }
-        public List<AlphaControlItem> alphaControl { get; set; }
-        public float bpmfactor { get; set; }
-        public List<EventLayer> eventLayers { get; set; }
-        public Extended extended { get; set; }
-        public int father { get; set; }
-        public int isCover { get; set; }
-        public List<RPENote> notes { get; set; }
-        public int numOfNotes { get; set; }
-        public List<PosControlItem> posControl { get; set; }
-        public List<SizeControlItem> sizeControl { get; set; }
-        public List<SkewControlItem> skewControl { get; set; }
-        public List<YControlItem> yControl { get; set; }
-        public int zOrder { get; set; }
+        
+        [JsonPropertyName("alphaControl")]
+        public List<AlphaControlItem> AlphaControl { get; set; }
+        [JsonPropertyName("bpmfactor")]
+        public float BPMFactor { get; set; }
+        [JsonPropertyName("eventLayers")]
+        public List<EventLayer> EventLayers { get; set; }
+        [JsonPropertyName("extended")]
+        public Extended Extended { get; set; }
+        [JsonPropertyName("father")]
+        public int Father { get; set; }
+        [JsonPropertyName("isCover")]
+        public int IsCover { get; set; }
+        [JsonPropertyName("notes")]
+        public List<RPENote> Notes { get; set; }
+        [JsonPropertyName("numOfNotes")]
+        public int NumOfNotes { get; set; }
+        [JsonPropertyName("posControl")]
+        public List<PosControlItem> PosControl { get; set; }
+        [JsonPropertyName("sizeControl")]
+        public List<SizeControlItem> SizeControl { get; set; }
+        [JsonPropertyName("skewControl")]
+        public List<SkewControlItem> SkewControl { get; set; }
+        [JsonPropertyName("yControl")]
+        public List<YControlItem> YControl { get; set; }
+        [JsonPropertyName("zOrder")]
+        public int ZOrder { get; set; }
     }
     public class ChartRPE
     {
-        public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos,Godot.Vector2 StagePixelSize)
+        public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos, Godot.Vector2 StagePixelSize)
         {
-            RPEPos.X *= StagePixelSize.X/1350.0f;
-            RPEPos.Y *= StagePixelSize.Y/900.0f;
+            RPEPos.X *= StagePixelSize.X / 1350.0f;
+            RPEPos.Y *= StagePixelSize.Y / 900.0f;
             return RPEPos;
         }
 
 
         public List<BPMListItem> BPMList;
-        
+
         public META META { get; set; }
-        public List<string> judgeLineGroup { get; set; }
-        public List<JudgeLineJson> judgeLineList { get; set; }
+        [JsonPropertyName("judgeLineGroup")]
+        public List<string> JudgeLineGroup { get; set; }
+        [JsonPropertyName("judgeLineList")]
+        public List<JudgeLineJson> JudgeLineList { get; set; }
 
 
-        public double RealTime2ChartTime(double realTime)
+        public void CalcRealTime()
+        {
+            foreach(var line in JudgeLineList){
+                foreach(var note in line.Notes){
+                    note.StartTime.RealTime = BeatTime2RealTime(BPMList,note.StartTime);
+                    note.EndTime.RealTime   = BeatTime2RealTime(BPMList,note.EndTime);
+                }
+
+                foreach(var layer in line.EventLayers){
+
+                    // Not necessary.
+
+                    // foreach(var e in layer.moveXEvents){
+                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
+                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
+                    // }
+                    // foreach(var e in layer.moveYEvents){
+                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
+                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
+                    // }
+                    // foreach(var e in layer.rotateEvents){
+                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
+                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
+                    // }
+                    // foreach(var e in layer.alphaEvents){
+                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
+                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
+                    // }
+
+
+                    foreach(var e in layer.SpeedEvents){
+                        e.StartTime.RealTime = BeatTime2RealTime(BPMList,e.StartTime);
+                        e.EndTime.RealTime   = BeatTime2RealTime(BPMList,e.EndTime);
+                    }
+                }
+            }
+        }
+
+
+        public static double BeatTime2RealTime(List<BPMListItem> bPMList, double beatTime)
         {
             List<double> bpmSeconds = new List<double>();
-            foreach(BPMListItem BPMInfo in BPMList){
+            foreach (BPMListItem BPMInfo in bPMList)
+            {
+                int i = bPMList.IndexOf(BPMInfo);
+                if (i < bPMList.Count - 1)
+                {
+                    double dBeat = bPMList[i + 1].StartTime - BPMInfo.StartTime;
+                    bpmSeconds.Add(dBeat * 60 / BPMInfo.BPM);
+                }
+                else
+                {
+                    bpmSeconds.Add(999999.0);
+                }
+            }
+
+            double SecondSum = 0.0d;
+            foreach (BPMListItem BPMInfo in bPMList)
+            {
+                int i = bPMList.IndexOf(BPMInfo);
+                if (i == bPMList.Count - 1 || bPMList[i + 1].StartTime >= beatTime)
+                {
+                    SecondSum += (beatTime - BPMInfo.StartTime) * 60 / BPMInfo.BPM;
+                }
+                else
+                {
+                    SecondSum += bpmSeconds[i];
+                    break;
+                }
+            }
+            return SecondSum;
+
+        }
+
+        public double RealTime2BeatTime(double realTime)
+        {
+            List<double> bpmSeconds = new List<double>();
+            foreach (BPMListItem BPMInfo in BPMList)
+            {
                 int i = BPMList.IndexOf(BPMInfo);
-                if (i < BPMList.Count - 1){
-                    double dChartTime = BPMList[i+1].startTime - BPMInfo.startTime;
-                    bpmSeconds.Add(dChartTime*60/BPMInfo.bpm);
-                }else{
+                if (i < BPMList.Count - 1)
+                {
+                    double dBeat = BPMList[i + 1].StartTime - BPMInfo.StartTime;
+                    bpmSeconds.Add(dBeat * 60 / BPMInfo.BPM);
+                }
+                else
+                {
                     bpmSeconds.Add(999999.0);
                 }
             }
@@ -342,14 +510,14 @@ namespace Phigodot.ChartStructure
 
             double second = 0.0;
             double last = 0.0;
-            foreach(double t in bpmSeconds)
+            foreach (double t in bpmSeconds)
             {
                 second += t;
-                if(t>=realTime)
+                if (t >= realTime)
                 {
                     double timeInBPMRange = realTime - last;
                     var curBPMInfo = BPMList[bpmSeconds.IndexOf(t)];
-                    return (timeInBPMRange*curBPMInfo.bpm/60) + curBPMInfo.startTime;
+                    return (timeInBPMRange * curBPMInfo.BPM / 60) + curBPMInfo.StartTime;
                 }
                 last = second;
             }

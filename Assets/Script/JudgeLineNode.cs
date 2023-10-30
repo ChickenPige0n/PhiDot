@@ -3,6 +3,7 @@ using Phigodot.ChartStructure;
 using System;
 using System.Collections.Generic;
 using Phigodot.Game;
+using System.Runtime.InteropServices;
 
 public partial class JudgeLineNode : Sprite2D
 {
@@ -10,40 +11,55 @@ public partial class JudgeLineNode : Sprite2D
 	// Properties Calculate by time -finished!
 	// Note Generate                -half done!
 	// Note YPos Calculate
-
+	public int LineIndex;
+	public ChartRPE Chart;
 	
 	[Export] public Texture2D TapTexture;
 	[Export] public Texture2D FlickTexture;
 	[Export] public Texture2D DragTexture;	
 
+	[Export] public Label Idex;
 
+
+
+	/// <summary>
+	/// Thank DianZhuiXingKong for providing Note Position Calculate Logic.
+	/// </summary>
 	public List<RPENote> Notes
 	{
 		set
 		{
-			foreach(RPENote noteInfo in value)
+			Idex.Text = LineIndex.ToString();
+			var noteList = value;
+			if(noteList == null) return;
+
+			foreach(RPENote noteInfo in noteList)
 			{
 				var instance = NoteScene.Instantiate<NoteNode>();
 				instance.NoteInfo = noteInfo;
 				noteInstances.Add(instance);
-				switch (noteInfo.type)
+				switch (noteInfo.Type)
 				{
-					case 0:
+					case 1:
 						instance.Texture = TapTexture;
 						break;
-					case 1:
-						instance.Texture = DragTexture;
-						break;
 					case 2:
-						instance.Texture = FlickTexture;
+						instance.Texture = TapTexture;//hold
 						break;
 					case 3:
-						// Todo: Hold
+						instance.Texture = FlickTexture;
+						break;
+					case 4:
+						instance.Texture = DragTexture;
 						break;
 					default:
 						break;
 				}
-				instance.Position = new Vector2(noteInfo.positionX*StageSize.X/1350.0f,100);
+				var posX = noteInfo.PositionX*StageSize.X/1350.0f;
+				var posY = 0.0f;
+				// TODO var posY =noteInfo.floorPosition*StageSize.Y;
+				if(instance.NoteInfo.Above != 1) {posX = -posX;posY = -posY;}
+				instance.Position = new Vector2(-posX ,posY);
 				AddChild(instance);
 			}
 		}
@@ -52,7 +68,6 @@ public partial class JudgeLineNode : Sprite2D
 	[Export] public PackedScene NoteScene;
 	public List<NoteNode> noteInstances = new List<NoteNode>();
 
-	public List<EventLayer> EventLayers;
 
 
 	public Vector2I StageSize;
@@ -62,6 +77,8 @@ public partial class JudgeLineNode : Sprite2D
 	{
 		set
 		{
+			var EventLayers = Chart.JudgeLineList[LineIndex].EventLayers;
+
 			double xPos = 0;
 			double yPos = 0;
 			double alpha = 0;
@@ -69,16 +86,27 @@ public partial class JudgeLineNode : Sprite2D
 
 			foreach(EventLayer layer in EventLayers)
 			{
-				xPos += layer.moveXEvents.GetValByTime(value);
-				yPos += layer.moveYEvents.GetValByTime(value);
-				alpha += layer.alphaEvents.GetValByTime(value);
-				rotate += layer.rotateEvents.GetValByTime(value);
+				xPos += layer.MoveXEvents.GetValByTime(value);
+				yPos += layer.MoveYEvents.GetValByTime(value);
+				alpha += layer.AlphaEvents.GetValByTime(value);
+				rotate += layer.RotateEvents.GetValByTime(value);
 			}
 
 			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos,-(float)yPos),StageSize) + (StageSize/2);
-			RotationDegrees = (float)rotate;
+			RotationDegrees = (float)rotate + 180;
 			var m = SelfModulate;
 			SelfModulate = new Color(m.R,m.G,m.B,(float)alpha/255.0f);
+
+
+
+			
+			foreach(NoteNode noteNode in noteInstances)
+			{
+				foreach(EventLayer layer in EventLayers)
+				{
+					// todo calc note yPos
+				}
+			}
 		}
 	}
 
@@ -92,5 +120,6 @@ public partial class JudgeLineNode : Sprite2D
 	{
 		Vector2I windowSize = DisplayServer.WindowGetSize();
 		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
+
 	}
 }
