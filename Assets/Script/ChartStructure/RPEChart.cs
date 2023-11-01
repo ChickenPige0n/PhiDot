@@ -108,12 +108,18 @@ namespace Phigodot.ChartStructure
 
 
 
-    //Cubic Bezier
+    /// <summary>
+    /// 四次方贝塞尔缓动类型
+    /// </summary>
     public class BezierPoints : List<float>
     {
 
     }
 
+
+    /// <summary>
+    /// RPE带分数时间
+    /// </summary>
     public class Time : List<int>
     {
         public double AsDouble()
@@ -126,6 +132,10 @@ namespace Phigodot.ChartStructure
             return time[2] == 0 ? 0 : (double)time[0] + ((double)time[1] / (double)time[2]);
         }
 
+        /// <summary>
+        /// 将小数拍数转为带分数
+        /// </summary>
+        /// <param name="value">拍数的小数</param>
         public static explicit operator Time(double value)
         {
 
@@ -159,6 +169,12 @@ namespace Phigodot.ChartStructure
         public float End { get; set; }
         [JsonPropertyName("endTime")]
         public Time EndTime { get; set; }
+
+
+        // Include extended time after event.
+        [JsonIgnore]
+        public double RealEndTime {get;set;}
+
         [JsonPropertyName("linkgroup")]
         public int LinkGroup { get; set; }
         [JsonPropertyName("start")]
@@ -168,21 +184,50 @@ namespace Phigodot.ChartStructure
 
         [JsonIgnore]
         public double floorPosition = 0;
+
+        /// <summary>
+        /// 计算速度事件从startTime到endTime的积分
+        /// </summary>
+        /// <param name="startTime">开始时间,单位为秒。</param>
+        /// <param name="endTime">结束时间,单位为秒,不能大于下一个事件开始时间</param>
+        /// <returns></returns>
+        public double Integral(double startTime, double endTime)
+        {
+            if (endTime <= StartTime.RealTime||startTime >= RealEndTime) return 0;// Beyond range.
+
+            double result = 0.0d;
+            double inEventEndTime = Math.Min(EndTime.RealTime, endTime);
+            double inEventStartTime = Math.Max(StartTime.RealTime, startTime);
+            double avgVal = ValAt((inEventStartTime + inEventEndTime) / 2);
+            result += avgVal * (inEventEndTime - inEventStartTime);
+
+            if (endTime >= EndTime.RealTime) result += End * (Math.Min(endTime, RealEndTime) - Math.Max(startTime, this.EndTime.RealTime));
+            return result;
+        }
+
+        public double ValAt(double time)
+        {
+            double ratio = (time - StartTime.RealTime) / (EndTime.RealTime - StartTime.RealTime);
+            return (End * ratio) + (Start * (1 - ratio));
+        }
+
     }
 
     public class EventList : List<RPEEvent>
     {
+        /// <summary>
+        /// 计算拍数对应的事件值
+        /// </summary>
+        /// <param name="time">当前拍数</param>
+        /// <returns></returns>
         public double GetValByTime(double time)
         {
             foreach (RPEEvent e in this)
             {
                 var i = this.IndexOf(e);
-                if (time >= e.StartTime && time <= e.EndTime)
-                {
-                    return e.GetCurVal(time);
-                }
-                if (i == this.Count - 1) break;
-                else if (time >= e.EndTime && time <= this[i + 1].StartTime)
+                double nextEnd = i == this.Count - 1 ? 99999.0d:this[i + 1].StartTime;
+
+                if (time >= e.StartTime && time <= nextEnd)
                 {
                     return e.GetCurVal(time);
                 }
@@ -199,9 +244,14 @@ namespace Phigodot.ChartStructure
         /// </summary>
         /// <param name="startTime">开始时间(单位为秒)</param>
         /// <param name="endTime">结束时间(单位为秒)</param>
-        public void Integral(double startTime, double endTime)
+        public double Integral(double startTime, double endTime)
         {
-            // TODO
+            double result = 0.0d;
+            foreach (var e in this)
+            {
+                result += e.Integral(startTime, endTime);
+            }
+            return result;
         }
     }
 
@@ -373,7 +423,7 @@ namespace Phigodot.ChartStructure
         public int @Group { get; set; }
         public string Name { get; set; }
         public string Texture { get; set; }
-        
+
         [JsonPropertyName("alphaControl")]
         public List<AlphaControlItem> AlphaControl { get; set; }
         [JsonPropertyName("bpmfactor")]
@@ -401,6 +451,15 @@ namespace Phigodot.ChartStructure
         [JsonPropertyName("zOrder")]
         public int ZOrder { get; set; }
     }
+
+    public static class IEnumerableExtended
+    {
+        public static IEnumerable<T> OrEmptyIfNull<T>(this IEnumerable<T> source)
+        {
+            return source ?? Enumerable.Empty<T>();
+        }
+    }
+
     public class ChartRPE
     {
         public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos, Godot.Vector2 StagePixelSize)
@@ -420,17 +479,23 @@ namespace Phigodot.ChartStructure
         public List<JudgeLineJson> JudgeLineList { get; set; }
 
         /// <summary>
-        /// 将拍数转换为秒数
+        /// 预计算一些数值
         /// </summary>
-        public void CalcRealTime()
+        public void PreCalculation()
         {
-            foreach(var line in JudgeLineList){
-                foreach(var note in line.Notes){
-                    note.StartTime.RealTime = BeatTime2RealTime(BPMList,note.StartTime);
-                    note.EndTime.RealTime   = BeatTime2RealTime(BPMList,note.EndTime);
+            foreach (var line in JudgeLineList)
+            {
+
+                // RealTime Calculate.
+                foreach (var note in line.Notes.OrEmptyIfNull())
+                {
+                    note.StartTime.RealTime = BeatTime2RealTime(note.StartTime);
+                    note.EndTime.RealTime = BeatTime2RealTime(note.EndTime);
                 }
 
-                foreach(var layer in line.EventLayers){
+
+                foreach (var layer in line.EventLayers)
+                {
 
                     // Not necessary.
 
@@ -452,10 +517,20 @@ namespace Phigodot.ChartStructure
                     // }
 
 
-                    foreach(var e in layer.SpeedEvents){
-                        e.StartTime.RealTime = BeatTime2RealTime(BPMList,e.StartTime);
-                        e.EndTime.RealTime   = BeatTime2RealTime(BPMList,e.EndTime);
+                    foreach (var e in layer.SpeedEvents)
+                    {
+                        e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
+                        e.EndTime.RealTime = BeatTime2RealTime(e.EndTime);
                     }
+                    foreach (var e in layer.SpeedEvents){
+                        
+                        // Real end time calculate.
+                        var list = layer.SpeedEvents;
+                        int i = list.IndexOf(e);
+                        if (i == list.Count - 1) continue; // Skip last event.
+                        e.RealEndTime = list[i + 1].StartTime.RealTime; // Collapse situration NOT considered.
+                    }
+                    layer.SpeedEvents[layer.SpeedEvents.Count - 1].RealEndTime = 99999.0d; // May have better solution.
                 }
             }
         }
@@ -463,8 +538,9 @@ namespace Phigodot.ChartStructure
         /// <summary>
         /// 将拍数转换为秒数
         /// </summary>
-        public static double BeatTime2RealTime(List<BPMListItem> bPMList, double beatTime)
+        public double BeatTime2RealTime(double beatTime)
         {
+            var bPMList = this.BPMList;
             List<double> bpmSeconds = new List<double>();
             foreach (BPMListItem BPMInfo in bPMList)
             {

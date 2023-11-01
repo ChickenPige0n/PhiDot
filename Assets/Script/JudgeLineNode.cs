@@ -11,59 +11,14 @@ public partial class JudgeLineNode : Sprite2D
 	// Properties Calculate by time -finished!
 	// Note Generate                -half done!
 	// Note YPos Calculate
-	public int LineIndex;
-	public ChartRPE Chart;
+	private int LineIndex;
+	private ChartRPE Chart;
 	
 	[Export] public Texture2D TapTexture;
 	[Export] public Texture2D FlickTexture;
 	[Export] public Texture2D DragTexture;	
 
 	[Export] public Label Idex;
-
-
-
-	/// <summary>
-	/// Thank DianZhuiXingKong for providing Note Position Calculate Logic.
-	/// </summary>
-	public List<RPENote> Notes
-	{
-		set
-		{
-			Idex.Text = LineIndex.ToString();
-			var noteList = value;
-			if(noteList == null) return;
-
-			foreach(RPENote noteInfo in noteList)
-			{
-				var instance = NoteScene.Instantiate<NoteNode>();
-				instance.NoteInfo = noteInfo;
-				noteInstances.Add(instance);
-				switch (noteInfo.Type)
-				{
-					case 1:
-						instance.Texture = TapTexture;
-						break;
-					case 2:
-						instance.Texture = TapTexture;//hold
-						break;
-					case 3:
-						instance.Texture = FlickTexture;
-						break;
-					case 4:
-						instance.Texture = DragTexture;
-						break;
-					default:
-						break;
-				}
-				var posX = noteInfo.PositionX*StageSize.X/1350.0f;
-				var posY = 0.0f;
-				// TODO var posY =noteInfo.floorPosition*StageSize.Y;
-				if(instance.NoteInfo.Above != 1) {posX = -posX;posY = -posY;}
-				instance.Position = new Vector2(-posX ,posY);
-				AddChild(instance);
-			}
-		}
-	}
 
 	[Export] public PackedScene NoteScene;
 	public List<NoteNode> noteInstances = new List<NoteNode>();
@@ -97,18 +52,74 @@ public partial class JudgeLineNode : Sprite2D
 			var m = SelfModulate;
 			SelfModulate = new Color(m.R,m.G,m.B,(float)alpha/255.0f);
 
-
-
-			
-			foreach(NoteNode noteNode in noteInstances)
-			{
-				foreach(EventLayer layer in EventLayers)
-				{
-					// todo calc note yPos
-				}
+			var realTime = Chart.BeatTime2RealTime(value);
+			var noteList = Chart.JudgeLineList[LineIndex].Notes;
+			foreach(RPENote note in noteList.OrEmptyIfNull()){
+				int i = noteList.IndexOf(note);
+				var oldX = noteInstances[i].Position.X;
+				noteInstances[i].Position = new Vector2(oldX,IntegrateInRange(realTime,note.StartTime.RealTime)*StageSize.Y);
 			}
+
 		}
 	}
+
+	public void InitChart(ChartRPE chart,int lineIndex){
+		this.Chart = chart;
+		this.LineIndex = lineIndex;
+		
+		Vector2I windowSize = DisplayServer.WindowGetSize();
+		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
+		
+		// Note Init
+		Idex.Text = LineIndex.ToString();
+		var noteList = chart.JudgeLineList[lineIndex].Notes;
+		foreach(RPENote noteInfo in noteList.OrEmptyIfNull())
+		{
+			var instance = NoteScene.Instantiate<NoteNode>();
+			instance.NoteInfo = noteInfo;
+			noteInstances.Add(instance);
+			switch (noteInfo.Type)
+			{
+				case 1:
+					instance.Texture = TapTexture;
+					break;
+				case 2:
+					instance.Texture = TapTexture;//hold
+					break;
+				case 3:
+					instance.Texture = FlickTexture;
+					break;
+				case 4:
+					instance.Texture = DragTexture;
+					break;
+				default:
+					break;
+			}
+			var x = ((float)StageSize.X)/1350.0f;
+			var posX = noteInfo.PositionX*x;
+			var posY = IntegrateInRange(0.0d,noteInfo.StartTime.RealTime, noteInfo.Size)*StageSize.Y;
+			GD.Print(x);
+			if(instance.NoteInfo.Above != 1) {posY = -posY;}
+			instance.Position = new Vector2(posX ,posY);
+			AddChild(instance);
+		}
+	}
+
+	/// <summary>
+	/// 获取时间范围内速度积分
+	/// </summary>
+	/// <param name="startTime"></param>
+	/// <param name="endTime"></param>
+	/// <param name="factor"></param>
+	/// <returns>单位：屏幕高度</returns>
+	public float IntegrateInRange(double startTime, double endTime,float factor = 1.0f){
+		double result = 0;
+		foreach(var Layer in Chart.JudgeLineList[LineIndex].EventLayers){
+			result += Layer.SpeedEvents.Integral(startTime,endTime);
+		}
+		return (float)result*factor*7.5f;
+	}
+
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -120,6 +131,5 @@ public partial class JudgeLineNode : Sprite2D
 	{
 		Vector2I windowSize = DisplayServer.WindowGetSize();
 		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
-
 	}
 }

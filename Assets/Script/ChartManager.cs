@@ -92,21 +92,16 @@ namespace Phigodot.Game
 			
 			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
 			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
-			
+			// Must done as initialization
+			Chart.PreCalculation();
 			foreach(var Line in Chart.JudgeLineList)
 			{
 				int i = Chart.JudgeLineList.IndexOf(Line);
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
 				
 				
-				LineInstance.LineIndex = i;
-
-				LineInstance.Chart       = Chart;
-				LineInstance.Notes       = Chart.JudgeLineList[i].Notes;
+				LineInstance.InitChart(Chart,i);
 				LineInstance.AspectRatio = this.AspectRatio;
-
-
-
 				AddChild(LineInstance);
 				judgeLineInstances.Add(LineInstance);
 			}
@@ -118,12 +113,6 @@ namespace Phigodot.Game
 			isPlaying = true;
 			Music.Play();
 		}
-
-
-
-
-
-
 
 		// Called when the node enters the scene tree for the first time.
 		public override void _Ready()
