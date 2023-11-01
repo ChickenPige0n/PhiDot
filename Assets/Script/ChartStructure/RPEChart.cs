@@ -173,7 +173,7 @@ namespace Phigodot.ChartStructure
 
         // Include extended time after event.
         [JsonIgnore]
-        public double RealEndTime {get;set;}
+        public double RealEndTime { get; set; }
 
         [JsonPropertyName("linkgroup")]
         public int LinkGroup { get; set; }
@@ -193,7 +193,7 @@ namespace Phigodot.ChartStructure
         /// <returns></returns>
         public double Integral(double startTime, double endTime)
         {
-            if (endTime <= StartTime.RealTime||startTime >= RealEndTime) return 0;// Beyond range.
+            if (endTime <= StartTime.RealTime || startTime >= RealEndTime) return 0;// Beyond range.
 
             double result = 0.0d;
             double inEventEndTime = Math.Min(EndTime.RealTime, endTime);
@@ -225,7 +225,7 @@ namespace Phigodot.ChartStructure
             foreach (RPEEvent e in this)
             {
                 var i = this.IndexOf(e);
-                double nextEnd = i == this.Count - 1 ? 99999.0d:this[i + 1].StartTime;
+                double nextEnd = i == this.Count - 1 ? 99999.0d : this[i + 1].StartTime;
 
                 if (time >= e.StartTime && time <= nextEnd)
                 {
@@ -256,24 +256,25 @@ namespace Phigodot.ChartStructure
 
         public void CalcFloorPosition()
         {
-            foreach(RPESpeedEvent lastEvent in this){
+            foreach (RPESpeedEvent lastEvent in this)
+            {
                 int i = this.IndexOf(lastEvent);
-                if (i == Count-1) break;
-                var curEvent = this[i+1];
+                if (i == Count - 1) break;
+                var curEvent = this[i + 1];
 
                 double lastStartTime = lastEvent.StartTime.RealTime;
-                double lastEndTime   = lastEvent.EndTime.RealTime;
+                double lastEndTime = lastEvent.EndTime.RealTime;
 
-                double curStartTime  = curEvent.StartTime.RealTime;
+                double curStartTime = curEvent.StartTime.RealTime;
 
 
-                curEvent.floorPosition += 
+                curEvent.floorPosition +=
                 lastEvent.floorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
                 lastEvent.End * (curStartTime - lastEndTime) / 1;
 
             }
         }
-        
+
         /// <summary>
         /// 获取当前时间的速度积分
         /// </summary>
@@ -283,13 +284,13 @@ namespace Phigodot.ChartStructure
         public double GetCurTimeSu(double time)
         {
             double floorPosition = 0.0d;
-            foreach(RPESpeedEvent speedEvent in this)
+            foreach (RPESpeedEvent speedEvent in this)
             {
                 double StartTime = speedEvent.StartTime.RealTime;
-                double EndTime   = speedEvent.EndTime.RealTime;
+                double EndTime = speedEvent.EndTime.RealTime;
 
                 int i = IndexOf(speedEvent);
-                if(time == speedEvent.StartTime.RealTime)
+                if (time == speedEvent.StartTime.RealTime)
                 {
                     floorPosition += speedEvent.floorPosition;
                     break;
@@ -297,20 +298,20 @@ namespace Phigodot.ChartStructure
                 else if (time <= speedEvent.EndTime.RealTime)
                 {
                     floorPosition += speedEvent.floorPosition +
-                    (speedEvent.Start + (speedEvent.End - speedEvent.Start) * 
+                    (speedEvent.Start + (speedEvent.End - speedEvent.Start) *
                     (time - StartTime) / (EndTime - StartTime) +
                     speedEvent.Start) * (time - StartTime) / 2;
                     break;
                 }
-                else if (Count-1 == i || time <= this[i+1].StartTime.RealTime)
+                else if (Count - 1 == i || time <= this[i + 1].StartTime.RealTime)
                 {
                     floorPosition += speedEvent.floorPosition + (speedEvent.End + speedEvent.Start) * (EndTime - StartTime) / 2 +
                     speedEvent.End * (time - EndTime) / 1;
                     break;
                 }
             }
-            
-            return floorPosition*7.5;
+
+            return floorPosition * 7.5;
         }
 
     }
@@ -393,11 +394,11 @@ namespace Phigodot.ChartStructure
     }
 
 
-        public class NoteEndTimeComparer : Comparer<RPENote>
+    public class NoteEndTimeComparer : Comparer<RPENote>
     {
         public override int Compare(RPENote x, RPENote y)
         {
-            if      (x.EndTime.RealTime > y.EndTime.RealTime) return 1;
+            if (x.EndTime.RealTime > y.EndTime.RealTime) return 1;
             else if (x.EndTime.RealTime < y.EndTime.RealTime) return -1;
             else return 0;
         }
@@ -406,7 +407,7 @@ namespace Phigodot.ChartStructure
     {
         public override int Compare(RPENote x, RPENote y)
         {
-            if      (x.StartTime.RealTime > y.StartTime.RealTime) return 1;
+            if (x.StartTime.RealTime > y.StartTime.RealTime) return 1;
             else if (x.StartTime.RealTime < y.StartTime.RealTime) return -1;
             else return 0;
         }
@@ -605,8 +606,9 @@ namespace Phigodot.ChartStructure
                         e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
                         e.EndTime.RealTime = BeatTime2RealTime(e.EndTime);
                     }
-                    foreach (var e in layer.SpeedEvents){
-                        
+                    foreach (var e in layer.SpeedEvents)
+                    {
+
                         // Real end time calculate.
                         var list = layer.SpeedEvents;
                         int i = list.IndexOf(e);
@@ -618,7 +620,7 @@ namespace Phigodot.ChartStructure
                     layer.SpeedEvents.CalcFloorPosition();
                 }
 
-                foreach(var note in line.Notes.OrEmptyIfNull())
+                foreach (var note in line.Notes.OrEmptyIfNull())
                 {
                     foreach (var layer in line.EventLayers)
                     {

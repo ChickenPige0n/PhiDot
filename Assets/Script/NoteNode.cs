@@ -5,7 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Phigodot.Game
 {
-	
+
 	public enum JudgeType
 	{
 		perfect,
@@ -38,7 +38,8 @@ namespace Phigodot.Game
 		public void Judge(JudgeType type = JudgeType.perfect)
 		{
 			var effectInstance = HitEffect.Instantiate<AnimatedSprite2D>();
-			switch (type) {
+			switch (type)
+			{
 				case JudgeType.perfect:
 					effectInstance.Modulate = PerfectColor;
 					break;
@@ -52,9 +53,9 @@ namespace Phigodot.Game
 			Judged = true;
 		}
 
-        public override void _Process(double delta)
-        {
-            
-        }
-    }
+		public override void _Process(double delta)
+		{
+
+		}
+	}
 }

@@ -13,10 +13,10 @@ public partial class JudgeLineNode : Sprite2D
 	// Note YPos Calculate
 	private int LineIndex;
 	private ChartRPE Chart;
-	
+
 	[Export] public Texture2D TapTexture;
 	[Export] public Texture2D FlickTexture;
-	[Export] public Texture2D DragTexture;	
+	[Export] public Texture2D DragTexture;
 
 	[Export] public Label Idex;
 
@@ -39,7 +39,7 @@ public partial class JudgeLineNode : Sprite2D
 			double alpha = 0;
 			double rotate = 0;
 
-			foreach(EventLayer layer in EventLayers)
+			foreach (EventLayer layer in EventLayers)
 			{
 				xPos += layer.MoveXEvents.GetValByTime(value);
 				yPos += layer.MoveYEvents.GetValByTime(value);
@@ -47,34 +47,36 @@ public partial class JudgeLineNode : Sprite2D
 				rotate += layer.RotateEvents.GetValByTime(value);
 			}
 
-			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos,-(float)yPos),StageSize) + (StageSize/2);
+			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, -(float)yPos), StageSize) + (StageSize / 2);
 			RotationDegrees = (float)rotate + 180;
 			var m = SelfModulate;
-			SelfModulate = new Color(m.R,m.G,m.B,(float)alpha/255.0f);
+			SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
 			var realTime = Chart.BeatTime2RealTime(value);
 			var noteList = Chart.JudgeLineList[LineIndex].Notes;
-			foreach(RPENote note in noteList.OrEmptyIfNull()){
+			foreach (RPENote note in noteList.OrEmptyIfNull())
+			{
 				int i = noteList.IndexOf(note);
-				var newY = note.Speed*7.5f*(float)(note.FloorPosition-GetCurSu(realTime));
-				newY = note.Above==1?newY:-newY;
-				noteInstances[i].Position = new Vector2(noteInstances[i].Position.X,newY);
+				var newY = note.Speed * 15f * (float)(note.FloorPosition - GetCurSu(realTime));
+				newY = note.Above == 1 ? newY : -newY;
+				noteInstances[i].Position = new Vector2(noteInstances[i].Position.X, newY);
 			}
 
 		}
 	}
 
-	public void InitChart(ChartRPE chart,int lineIndex){
+	public void InitChart(ChartRPE chart, int lineIndex)
+	{
 		this.Chart = chart;
 		this.LineIndex = lineIndex;
-		
+
 		Vector2I windowSize = DisplayServer.WindowGetSize();
-		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
-		
+		StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
+
 		// Note Init
 		Idex.Text = LineIndex.ToString();
 		var noteList = chart.JudgeLineList[lineIndex].Notes;
-		foreach(RPENote noteInfo in noteList.OrEmptyIfNull())
+		foreach (RPENote noteInfo in noteList.OrEmptyIfNull())
 		{
 			var instance = NoteScene.Instantiate<NoteNode>();
 			instance.NoteInfo = noteInfo;
@@ -96,12 +98,12 @@ public partial class JudgeLineNode : Sprite2D
 				default:
 					break;
 			}
-			var x = ((float)StageSize.X)/1350.0f;
-			var posX = noteInfo.PositionX*x;
+			var x = ((float)StageSize.X) / 1350.0f;
+			var posX = noteInfo.PositionX * x;
 			float posY = (float)noteInfo.FloorPosition;
 			GD.Print(x);
-			if(instance.NoteInfo.Above != 1) {posY = -posY;}
-			instance.Position = new Vector2(posX ,posY);
+			if (instance.NoteInfo.Above != 1) { posY = -posY; }
+			instance.Position = new Vector2(posX, posY);
 			AddChild(instance);
 		}
 	}
@@ -113,12 +115,14 @@ public partial class JudgeLineNode : Sprite2D
 	/// <param name="time"></param>
 	/// <param name="factor"></param>
 	/// <returns>单位：屏幕高度</returns>
-	public float GetCurSu(double time,float factor = 1.0f){
+	public float GetCurSu(double time, float factor = 1.0f)
+	{
 		double result = 0;
-		foreach(var Layer in Chart.JudgeLineList[LineIndex].EventLayers){
+		foreach (var Layer in Chart.JudgeLineList[LineIndex].EventLayers)
+		{
 			result += Layer.SpeedEvents.GetCurTimeSu(time);
 		}
-		return (float)result*factor;
+		return (float)result * factor;
 	}
 
 
@@ -131,6 +135,6 @@ public partial class JudgeLineNode : Sprite2D
 	public override void _Process(double delta)
 	{
 		Vector2I windowSize = DisplayServer.WindowGetSize();
-		StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
+		StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
 	}
 }

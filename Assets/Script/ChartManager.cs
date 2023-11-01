@@ -20,7 +20,7 @@ namespace Phigodot.Game
 		public double AspectRatio = 1.666667d;
 
 
-#region UIReferences
+		#region UIReferences
 		[Export] public Label ScoreLabel;
 		public int Score = 0;
 		[Export] public Label SongNameLabel;
@@ -33,7 +33,7 @@ namespace Phigodot.Game
 		[Export] public ProgressBar progressBar;
 
 		[Export] public Control PauseUI;
-#endregion
+		#endregion
 
 		[Export] public AudioStreamPlayer Music;
 
@@ -52,22 +52,22 @@ namespace Phigodot.Game
 		{
 			isPlaying = !isPlaying;
 			PauseUI.Visible = !PauseUI.Visible;
-        	if(isPlaying)
+			if (isPlaying)
 			{
-            	Music.Play();
+				Music.Play();
 				Music.Seek((float)Time);
-        	}
+			}
 			else
 			{
-            	Music.Stop();
-        	}
+				Music.Stop();
+			}
 		}
 
 		public void Restart()
 		{
 			PauseUI.Visible = !PauseUI.Visible;
 			isPlaying = true;
-            Music.Play();
+			Music.Play();
 			Time = 0.0;
 			PlaybackTime = 0.0;
 		}
@@ -81,26 +81,26 @@ namespace Phigodot.Game
 
 		public void LoadChart(string RootDir)
 		{
-			string infoPath = Path.Combine(RootDir,"info.txt");
-            string infoContent = File.ReadAllText(infoPath);
+			string infoPath = Path.Combine(RootDir, "info.txt");
+			string infoContent = File.ReadAllText(infoPath);
 			chartData = ChartData.FromString(RootDir, infoContent);
 			// TODO: Read from JSON META
 			BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(chartData.ImageSource);
-			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir,chartData.MusicFileName));
+			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir, chartData.MusicFileName));
 			SongNameLabel.Text = chartData.ChartName;
 			DiffLabel.Text = chartData.ChartDiff;
-			
-			string jsonText = File.ReadAllText(Path.Combine(RootDir,chartData.ChartFileName));
+
+			string jsonText = File.ReadAllText(Path.Combine(RootDir, chartData.ChartFileName));
 			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
 			// Must done as initialization
 			Chart.PreCalculation();
-			foreach(var Line in Chart.JudgeLineList)
+			foreach (var Line in Chart.JudgeLineList)
 			{
 				int i = Chart.JudgeLineList.IndexOf(Line);
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
-				
-				
-				LineInstance.InitChart(Chart,i);
+
+
+				LineInstance.InitChart(Chart, i);
 				LineInstance.AspectRatio = this.AspectRatio;
 				AddChild(LineInstance);
 				judgeLineInstances.Add(LineInstance);
@@ -127,28 +127,28 @@ namespace Phigodot.Game
 		public override void _Process(double delta)
 		{
 			Vector2I windowSize = DisplayServer.WindowGetSize();
-			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y*AspectRatio),(int)windowSize.Y);
+			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
 
-			BackGroundImage.Scale = StageSize/BackGroundImage.Texture.GetSize();
+			BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
 
 			this.Size = StageSize;
-			this.Position = (windowSize - StageSize)/2;
+			this.Position = (windowSize - StageSize) / 2;
 
 			if (isPlaying)
 			{
 				Time += delta;
 				PlaybackTime = Music.GetPlaybackPosition();
-				progressBar.Value = PlaybackTime/Music.Stream.GetLength();
-				
+				progressBar.Value = PlaybackTime / Music.Stream.GetLength();
+
 				double ChartTime = Chart.RealTime2BeatTime(Time);
 
-				foreach(JudgeLineNode line in judgeLineInstances)
+				foreach (JudgeLineNode line in judgeLineInstances)
 				{
 					line.ChartTime = ChartTime;
 				}
 
 				#region UI Calculate
-				
+
 				ComboLabel.Text = Combo.ToString();
 				ScoreLabel.Text = Score.ToString("D7");
 
