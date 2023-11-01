@@ -253,6 +253,66 @@ namespace Phigodot.ChartStructure
             }
             return result;
         }
+
+        public void CalcFloorPosition()
+        {
+            foreach(RPESpeedEvent lastEvent in this){
+                int i = this.IndexOf(lastEvent);
+                if (i == Count-1) break;
+                var curEvent = this[i+1];
+
+                double lastStartTime = lastEvent.StartTime.RealTime;
+                double lastEndTime   = lastEvent.EndTime.RealTime;
+
+                double curStartTime  = curEvent.StartTime.RealTime;
+
+
+                curEvent.floorPosition += 
+                lastEvent.floorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
+                lastEvent.End * (curStartTime - lastEndTime) / 1;
+
+            }
+        }
+        
+        /// <summary>
+        /// 获取当前时间的速度积分
+        /// </summary>
+        /// <param name="bPMList"></param>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public double GetCurTimeSu(double time)
+        {
+            double floorPosition = 0.0d;
+            foreach(RPESpeedEvent speedEvent in this)
+            {
+                double StartTime = speedEvent.StartTime.RealTime;
+                double EndTime   = speedEvent.EndTime.RealTime;
+
+                int i = IndexOf(speedEvent);
+                if(time == speedEvent.StartTime.RealTime)
+                {
+                    floorPosition += speedEvent.floorPosition;
+                    break;
+                }
+                else if (time <= speedEvent.EndTime.RealTime)
+                {
+                    floorPosition += speedEvent.floorPosition +
+                    (speedEvent.Start + (speedEvent.End - speedEvent.Start) * 
+                    (time - StartTime) / (EndTime - StartTime) +
+                    speedEvent.Start) * (time - StartTime) / 2;
+                    break;
+                }
+                else if (Count-1 == i || time <= this[i+1].StartTime.RealTime)
+                {
+                    floorPosition += speedEvent.floorPosition + (speedEvent.End + speedEvent.Start) * (EndTime - StartTime) / 2 +
+                    speedEvent.End * (time - EndTime) / 1;
+                    break;
+                }
+            }
+            
+            return floorPosition*7.5;
+        }
+
     }
 
 
@@ -332,6 +392,26 @@ namespace Phigodot.ChartStructure
         public EventList inclineEvents { get; set; }
     }
 
+
+        public class NoteEndTimeComparer : Comparer<RPENote>
+    {
+        public override int Compare(RPENote x, RPENote y)
+        {
+            if      (x.EndTime.RealTime > y.EndTime.RealTime) return 1;
+            else if (x.EndTime.RealTime < y.EndTime.RealTime) return -1;
+            else return 0;
+        }
+    }
+    public class NoteStartTimeComparer : Comparer<RPENote>
+    {
+        public override int Compare(RPENote x, RPENote y)
+        {
+            if      (x.StartTime.RealTime > y.StartTime.RealTime) return 1;
+            else if (x.StartTime.RealTime < y.StartTime.RealTime) return -1;
+            else return 0;
+        }
+    }
+
     public class RPENote
     {
         [JsonPropertyName("above")]
@@ -356,6 +436,9 @@ namespace Phigodot.ChartStructure
         public float VisibleTime { get; set; }
         [JsonPropertyName("yOffset")]
         public float YOffset { get; set; }
+
+        [JsonIgnore]
+        public double FloorPosition;
     }
 
     public class PosControlItem
@@ -531,6 +614,16 @@ namespace Phigodot.ChartStructure
                         e.RealEndTime = list[i + 1].StartTime.RealTime; // Collapse situration NOT considered.
                     }
                     layer.SpeedEvents[layer.SpeedEvents.Count - 1].RealEndTime = 99999.0d; // May have better solution.
+
+                    layer.SpeedEvents.CalcFloorPosition();
+                }
+
+                foreach(var note in line.Notes.OrEmptyIfNull())
+                {
+                    foreach (var layer in line.EventLayers)
+                    {
+                        note.FloorPosition += layer.SpeedEvents.GetCurTimeSu(note.StartTime.RealTime);
+                    }
                 }
             }
         }

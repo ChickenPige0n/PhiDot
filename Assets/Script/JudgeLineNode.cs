@@ -56,8 +56,9 @@ public partial class JudgeLineNode : Sprite2D
 			var noteList = Chart.JudgeLineList[LineIndex].Notes;
 			foreach(RPENote note in noteList.OrEmptyIfNull()){
 				int i = noteList.IndexOf(note);
-				var oldX = noteInstances[i].Position.X;
-				noteInstances[i].Position = new Vector2(oldX,IntegrateInRange(realTime,note.StartTime.RealTime)*StageSize.Y);
+				var newY = note.Speed*7.5f*(float)(note.FloorPosition-GetCurSu(realTime));
+				newY = note.Above==1?newY:-newY;
+				noteInstances[i].Position = new Vector2(noteInstances[i].Position.X,newY);
 			}
 
 		}
@@ -97,7 +98,7 @@ public partial class JudgeLineNode : Sprite2D
 			}
 			var x = ((float)StageSize.X)/1350.0f;
 			var posX = noteInfo.PositionX*x;
-			var posY = IntegrateInRange(0.0d,noteInfo.StartTime.RealTime, noteInfo.Size)*StageSize.Y;
+			float posY = (float)noteInfo.FloorPosition;
 			GD.Print(x);
 			if(instance.NoteInfo.Above != 1) {posY = -posY;}
 			instance.Position = new Vector2(posX ,posY);
@@ -109,15 +110,15 @@ public partial class JudgeLineNode : Sprite2D
 	/// 获取时间范围内速度积分
 	/// </summary>
 	/// <param name="startTime"></param>
-	/// <param name="endTime"></param>
+	/// <param name="time"></param>
 	/// <param name="factor"></param>
 	/// <returns>单位：屏幕高度</returns>
-	public float IntegrateInRange(double startTime, double endTime,float factor = 1.0f){
+	public float GetCurSu(double time,float factor = 1.0f){
 		double result = 0;
 		foreach(var Layer in Chart.JudgeLineList[LineIndex].EventLayers){
-			result += Layer.SpeedEvents.Integral(startTime,endTime);
+			result += Layer.SpeedEvents.GetCurTimeSu(time);
 		}
-		return (float)result*factor*7.5f;
+		return (float)result*factor;
 	}
 
 
