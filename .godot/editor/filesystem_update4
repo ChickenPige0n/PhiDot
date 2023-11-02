@@ -1,8 +1,0 @@
-res://Assets/Scene/Game.tscn
-res://Assets/Shaders/ImageBlur.gdshader
-res://Assets/Scene/Note.tscn
-res://Assets/Scene/JudgeLine.tscn
-res://Assets/Script/ChartManager.cs
-res://Assets/Script/JudgeLineNode.cs
-res://Assets/Script/NoteNode.cs
-res://Assets/Script/Pause.cs

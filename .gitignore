@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/shader_cache
 .godot/mono
+.godot/editor
 
 # Godot-specific ignores
 .import/
@@ -16,3 +17,5 @@ data_*/
 mono_crash.*.json
 
 .vs/
+
+Assets/ExampleChart/
