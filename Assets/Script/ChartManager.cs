@@ -186,7 +186,6 @@ namespace Phigodot.Game
 			Vector2I windowSize = DisplayServer.WindowGetSize();
 			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
 
-			HitParticle.VisibilityRect = new Rect2(0, 0, windowSize);
 
 			BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
 
