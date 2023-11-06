@@ -7,12 +7,22 @@ using System.Threading;
 using Phigodot.ChartStructure;
 using Microsoft.VisualBasic;
 using System.Drawing;
+using Color = Godot.Color;
 
 namespace Phigodot.Game
 {
+	public enum JudgeType
+	{
+		perfect,
+		good,
+		miss
+	}
+
 	// 主程序类
 	public partial class ChartManager : Control
 	{
+
+
 		public ChartRPE Chart;
 
 		public ChartData chartData;
@@ -35,9 +45,21 @@ namespace Phigodot.Game
 		[Export] public Control PauseUI;
 		#endregion
 
-		[Export] public AudioStreamPlayer Music;
 
+
+
+		#region SFX
+		
+		[Export] public AudioStreamPlayer Music;
+		[Export] public AudioStreamPlayer TapSFX;
+		[Export] public AudioStreamPlayer FlickSFX;
+		[Export] public AudioStreamPlayer DragSFX;
+		
+		#endregion
+		[Export] public GpuParticles2D HitParticle;
+		[Export] public PackedScene HEScene;
 		[Export] public PackedScene JudgeLineScene;
+
 
 
 		public List<JudgeLineNode> judgeLineInstances = new List<JudgeLineNode>();
@@ -98,15 +120,50 @@ namespace Phigodot.Game
 			{
 				int i = Chart.JudgeLineList.IndexOf(Line);
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
-
-
-				LineInstance.InitChart(Chart, i);
+				LineInstance.Init(Chart, i);
 				LineInstance.AspectRatio = this.AspectRatio;
 				AddChild(LineInstance);
 				judgeLineInstances.Add(LineInstance);
+
+				foreach (NoteNode note in LineInstance.noteInstances)
+				{
+					note.OnJudjed += JudgedEventHandler;
+				}
 			}
 		}
 
+
+
+		public Color PerfectColor = new(0.839216f, 0.741176f, 0.360784f, 1);
+		public Color GoodColor = new(0x31cce1);
+		public void JudgedEventHandler(Vector2 globalPosition, int judgeType, int noteType)
+		{
+			var judgeEnumType = (JudgeType)judgeType;
+			var noteEnumType = (NoteType)noteType;
+			AnimatedSprite2D effectInstance = HEScene.Instantiate<AnimatedSprite2D>();
+			Color color = PerfectColor;
+			switch (judgeEnumType)
+			{
+				case JudgeType.perfect:
+					color = PerfectColor;
+					break;
+				case JudgeType.good:
+					color = GoodColor;
+					break;
+				default:
+					break;
+			}
+			
+			effectInstance.Modulate = color;
+
+			HitParticle.EmitParticle(new Transform2D(),globalPosition,color, color,1);
+			
+			Vector2I windowSize = DisplayServer.WindowGetSize();
+			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
+
+			effectInstance.Position = globalPosition - (windowSize - StageSize)/2;
+			AddChild(effectInstance);
+		}
 
 		public void PlayChart()
 		{
@@ -128,6 +185,8 @@ namespace Phigodot.Game
 		{
 			Vector2I windowSize = DisplayServer.WindowGetSize();
 			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
+
+			HitParticle.VisibilityRect = new Rect2(0, 0, windowSize);
 
 			BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
 

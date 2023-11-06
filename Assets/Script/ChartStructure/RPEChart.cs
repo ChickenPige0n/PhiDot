@@ -413,6 +413,14 @@ namespace Phigodot.ChartStructure
         }
     }
 
+
+	public enum NoteType : int
+	{
+		Tap = 1,
+		Hold = 2,
+		Flick = 3,
+		Drag = 4,
+	}
     public class RPENote
     {
         [JsonPropertyName("above")]
@@ -432,7 +440,7 @@ namespace Phigodot.ChartStructure
         [JsonPropertyName("startTime")]
         public Time StartTime { get; set; }
         [JsonPropertyName("type")]
-        public int Type { get; set; }
+        public NoteType Type { get; set; }
         [JsonPropertyName("visibleTime")]
         public float VisibleTime { get; set; }
         [JsonPropertyName("yOffset")]

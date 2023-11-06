@@ -134,21 +134,21 @@ animations = [{
 offsets = PackedFloat32Array(0, 0.721311, 1)
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.760784, 1, 1, 1, 0)
 
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_8cxok"]
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ic4b8"]
 gradient = SubResource("Gradient_jdiqp")
 
 [sub_resource type="Curve" id="Curve_tcid3"]
 _data = [Vector2(0, 1), 0.0, -1.76609, 0, 0, Vector2(1, 0.175824), -0.0457873, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="CurveTexture" id="CurveTexture_4aofr"]
+[sub_resource type="CurveTexture" id="CurveTexture_8g7aw"]
 curve = SubResource("Curve_tcid3")
 
 [sub_resource type="Curve" id="Curve_t7wgv"]
 _data = [Vector2(0, 1), 0.0, -0.0173512, 0, 0, Vector2(1, 0.78022), -0.699301, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="CurveTexture" id="CurveTexture_1i0mr"]
+[sub_resource type="CurveTexture" id="CurveTexture_puek6"]
 curve = SubResource("Curve_t7wgv")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_eebwi"]
@@ -156,34 +156,22 @@ particle_flag_disable_z = true
 emission_shape_scale = Vector3(0, 0, 0)
 radial_velocity_min = 800.0
 radial_velocity_max = 1300.0
-radial_velocity_curve = SubResource("CurveTexture_4aofr")
+radial_velocity_curve = SubResource("CurveTexture_8g7aw")
 gravity = Vector3(0, 0, 0)
 scale_min = 0.4
 scale_max = 0.5
-scale_curve = SubResource("CurveTexture_1i0mr")
-color_ramp = SubResource("GradientTexture1D_8cxok")
+scale_curve = SubResource("CurveTexture_puek6")
+color_ramp = SubResource("GradientTexture1D_ic4b8")
 
 [sub_resource type="Animation" id="Animation_ui37g"]
 resource_name = "Particle"
-tracks/0/type = "value"
+tracks/0/type = "method"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("GPUParticles2D:emitting")
+tracks/0/path = NodePath(".")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0.1),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-tracks/1/type = "method"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
 "times": PackedFloat32Array(1),
 "transitions": PackedFloat32Array(1),
 "values": [{

@@ -1,13 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://q0ardap0o4oc"]
+[gd_scene load_steps=2 format=3 uid="uid://q0ardap0o4oc"]
 
 [ext_resource type="Script" path="res://Assets/Script/NoteNode.cs" id="1_hiy4y"]
-[ext_resource type="PackedScene" uid="uid://tla4ta022aiv" path="res://Assets/Scene/HitEffect.tscn" id="3_incce"]
 
 [node name="Note" type="Sprite2D" node_paths=PackedStringArray("floorPos")]
 scale = Vector2(0.15, 0.15)
 script = ExtResource("1_hiy4y")
 floorPos = NodePath("Label")
-HitEffect = ExtResource("3_incce")
 
 [node name="Label" type="Label" parent="."]
 visible = false

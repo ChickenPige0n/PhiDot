@@ -1,19 +1,13 @@
 using Godot;
 using Phigodot.ChartStructure;
-using System;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Phigodot.Game
 {
-
-	public enum JudgeType
-	{
-		perfect,
-		good,
-		miss
-	}
 	public partial class NoteNode : Sprite2D
 	{
+		[Signal]
+		public delegate void OnJudjedEventHandler(Vector2 globalPosition,int judgeType,int noteType);
+		
 		[Export] public Label floorPos;
 		public RPENote NoteInfo;
 		private bool _judged = false;
@@ -27,36 +21,13 @@ namespace Phigodot.Game
 			{
 				if(!_judged)
 				{
-					Judge();
+					EmitSignal(SignalName.OnJudjed,GlobalPosition,(int)JudgeType.perfect,(int)NoteInfo.Type);
 				}
 				_judged = value;
 				Visible = !value;
 			}
 		}
 
-		public Color PerfectColor = new Color(0.839216f, 0.741176f, 0.360784f, 1);
-		public Color GoodColor = new Color(0x31cce1);
-
-		[Export] public PackedScene HitEffect;
-
-
-
-		public void Judge(JudgeType type = JudgeType.perfect)
-		{
-			var effectInstance = HitEffect.Instantiate<AnimatedSprite2D>();
-			switch (type)
-			{
-				case JudgeType.perfect:
-					effectInstance.Modulate = PerfectColor;
-					break;
-				case JudgeType.good:
-					effectInstance.Modulate = GoodColor;
-					break;
-				default:
-					break;
-			}
-			AddChild(effectInstance);
-		}
 
 		public override void _Process(double delta)
 		{

@@ -23,10 +23,6 @@ public partial class JudgeLineNode : Sprite2D
 	[Export] public PackedScene NoteScene;
 	public List<NoteNode> noteInstances = new List<NoteNode>();
 
-
-	[Signal]
-	delegate void GenHitEffectEventHandler(Vector2 Pos, int amount);
-
 	public Vector2I StageSize;
 	public double AspectRatio = 1.666667d;
 
@@ -61,9 +57,9 @@ public partial class JudgeLineNode : Sprite2D
 				int i = noteList.IndexOf(note);
 				if(value >= note.EndTime)
 				{
-					if(!noteInstances[i].Judged){
+					if(!noteInstances[i].Judged)
+					{
 						noteInstances[i].Judged = true;
-						//EmitSignal();
 					}
 				}
 				var newY = StageSize.Y/7.5f * note.Speed * (float)(note.FloorPosition - GetCurSu(realTime));
@@ -73,7 +69,7 @@ public partial class JudgeLineNode : Sprite2D
 		}
 	}
 
-	public void InitChart(ChartRPE chart, int lineIndex)
+	public void Init(ChartRPE chart, int lineIndex)
 	{
 		this.Chart = chart;
 		this.LineIndex = lineIndex;
@@ -91,16 +87,16 @@ public partial class JudgeLineNode : Sprite2D
 			noteInstances.Add(instance);
 			switch (noteInfo.Type)
 			{
-				case 1:
+				case NoteType.Tap:
 					instance.Texture = TapTexture;
 					break;
-				case 2:
+				case NoteType.Hold:
 					instance.Texture = TapTexture;//hold
 					break;
-				case 3:
+				case NoteType.Flick:
 					instance.Texture = FlickTexture;
 					break;
-				case 4:
+				case NoteType.Drag:
 					instance.Texture = DragTexture;
 					break;
 				default:
@@ -122,14 +118,14 @@ public partial class JudgeLineNode : Sprite2D
 	/// <param name="time"></param>
 	/// <param name="factor"></param>
 	/// <returns>单位：屏幕高度</returns>
-	public float GetCurSu(double time, float factor = 1.0f)
+	public float GetCurSu(double time)
 	{
 		double result = 0;
 		foreach (var Layer in Chart.JudgeLineList[LineIndex].EventLayers)
 		{
 			result += Layer.SpeedEvents.GetCurTimeSu(time);
 		}
-		return (float)result * factor;
+		return (float)result;
 	}
 
 

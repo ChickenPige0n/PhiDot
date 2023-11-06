@@ -1,13 +1,48 @@
-[gd_scene load_steps=12 format=3 uid="uid://dplevybj8qnbv"]
+[gd_scene load_steps=21 format=3 uid="uid://dplevybj8qnbv"]
 
 [ext_resource type="Script" path="res://Assets/Script/ChartManager.cs" id="1_di470"]
 [ext_resource type="FontFile" uid="uid://c8668gfxciipd" path="res://Assets/Font/Phigros.ttf" id="1_vlqfs"]
 [ext_resource type="AudioStream" uid="uid://djgjr220x0tnl" path="res://Assets/Audio/Effects/Tap_or_Hold.wav" id="2_clytu"]
 [ext_resource type="Texture2D" uid="uid://bjka5qa0v58p6" path="res://Assets/Image/Materials/Suspend_Shrink.png" id="2_sva1u"]
 [ext_resource type="PackedScene" uid="uid://c2qhwt3y0tum6" path="res://Assets/Scene/JudgeLine.tscn" id="2_uchdx"]
+[ext_resource type="PackedScene" uid="uid://tla4ta022aiv" path="res://Assets/Scene/HitEffect.tscn" id="3_b2rbh"]
 [ext_resource type="AudioStream" uid="uid://bfu6ni4pbrqbh" path="res://Assets/Audio/Effects/Drag.wav" id="3_lavxw"]
 [ext_resource type="AudioStream" uid="uid://cebrxja6gc661" path="res://Assets/Audio/Effects/Flick.wav" id="4_wm3aq"]
+[ext_resource type="Texture2D" uid="uid://b638lyqpqf7s5" path="res://Assets/Image/Materials/HitEffect/HitParticle.bmp" id="4_xfyfp"]
 [ext_resource type="LabelSettings" uid="uid://b8nqbnsnytrtd" path="res://Assets/Font/UIFontSettings.tres" id="8_5as7v"]
+
+[sub_resource type="Gradient" id="Gradient_sqnbw"]
+offsets = PackedFloat32Array(0, 0.721311, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.760784, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_8cxok"]
+gradient = SubResource("Gradient_sqnbw")
+
+[sub_resource type="Curve" id="Curve_djcv5"]
+_data = [Vector2(0, 1), 0.0, -1.76609, 0, 0, Vector2(1, 0.175824), -0.0457873, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_4aofr"]
+curve = SubResource("Curve_djcv5")
+
+[sub_resource type="Curve" id="Curve_gxi3f"]
+_data = [Vector2(0, 1), 0.0, -0.0173512, 0, 0, Vector2(1, 0.78022), -0.699301, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_1i0mr"]
+curve = SubResource("Curve_gxi3f")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0sl2w"]
+particle_flag_disable_z = true
+emission_shape_scale = Vector3(0, 0, 0)
+radial_velocity_min = 800.0
+radial_velocity_max = 1300.0
+radial_velocity_curve = SubResource("CurveTexture_4aofr")
+gravity = Vector3(0, 0, 0)
+scale_min = 0.4
+scale_max = 0.5
+scale_curve = SubResource("CurveTexture_1i0mr")
+color_ramp = SubResource("GradientTexture1D_8cxok")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g1su1"]
 
@@ -19,7 +54,7 @@ font_size = 40
 font = ExtResource("1_vlqfs")
 font_size = 20
 
-[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "progressBar", "PauseUI", "Music")]
+[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "progressBar", "PauseUI", "Music", "TapSFX", "FlickSFX", "DragSFX", "HitParticle")]
 clip_contents = true
 layout_mode = 3
 anchors_preset = 15
@@ -36,7 +71,12 @@ ComboLabel = NodePath("ComboUI/Combo")
 BackGroundImage = NodePath("BackGround")
 progressBar = NodePath("ProgressBar")
 PauseUI = NodePath("PauseUI")
-Music = NodePath("Game/Music")
+Music = NodePath("SFX/Music")
+TapSFX = NodePath("SFX/Tap")
+FlickSFX = NodePath("SFX/Flick")
+DragSFX = NodePath("SFX/Drag")
+HitParticle = NodePath("HitParticle")
+HEScene = ExtResource("3_b2rbh")
 JudgeLineScene = ExtResource("2_uchdx")
 
 [node name="BackGround" type="Sprite2D" parent="."]
@@ -44,19 +84,29 @@ modulate = Color(0.607843, 0.607843, 0.607843, 1)
 texture_filter = 4
 centered = false
 
-[node name="Game" type="Node2D" parent="."]
+[node name="HitParticle" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 4
+process_material = SubResource("ParticleProcessMaterial_0sl2w")
+texture = ExtResource("4_xfyfp")
+lifetime = 0.5
+explosiveness = 1.0
+fixed_fps = 60
+visibility_rect = Rect2(0, 0, 1920, 1080)
 
-[node name="Music" type="AudioStreamPlayer" parent="Game"]
+[node name="SFX" type="Node2D" parent="."]
 
-[node name="Tap_or_Hold" type="AudioStreamPlayer" parent="Game"]
+[node name="Music" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="Tap" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("2_clytu")
 max_polyphony = 100
 
-[node name="Drag" type="AudioStreamPlayer" parent="Game"]
+[node name="Drag" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("3_lavxw")
 max_polyphony = 100
 
-[node name="Flick" type="AudioStreamPlayer" parent="Game"]
+[node name="Flick" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("4_wm3aq")
 max_polyphony = 100
 

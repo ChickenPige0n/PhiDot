@@ -1,7 +1,5 @@
 # Godot 4+ specific ignores
-.godot/shader_cache
-.godot/mono
-.godot/editor
+.godot
 
 # Godot-specific ignores
 .import/
