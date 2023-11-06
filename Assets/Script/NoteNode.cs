@@ -25,6 +25,10 @@ namespace Phigodot.Game
 			}
 			set
 			{
+				if(!_judged)
+				{
+					Judge();
+				}
 				_judged = value;
 				Visible = !value;
 			}
@@ -34,6 +38,8 @@ namespace Phigodot.Game
 		public Color GoodColor = new Color(0x31cce1);
 
 		[Export] public PackedScene HitEffect;
+
+
 
 		public void Judge(JudgeType type = JudgeType.perfect)
 		{
@@ -50,12 +56,11 @@ namespace Phigodot.Game
 					break;
 			}
 			AddChild(effectInstance);
-			Judged = true;
 		}
 
 		public override void _Process(double delta)
 		{
-
+			//floorPos.Text = Position.Y.ToString();
 		}
 	}
 }

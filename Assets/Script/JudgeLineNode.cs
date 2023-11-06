@@ -24,6 +24,8 @@ public partial class JudgeLineNode : Sprite2D
 	public List<NoteNode> noteInstances = new List<NoteNode>();
 
 
+	[Signal]
+	delegate void GenHitEffectEventHandler(Vector2 Pos, int amount);
 
 	public Vector2I StageSize;
 	public double AspectRatio = 1.666667d;
@@ -57,11 +59,17 @@ public partial class JudgeLineNode : Sprite2D
 			foreach (RPENote note in noteList.OrEmptyIfNull())
 			{
 				int i = noteList.IndexOf(note);
-				var newY = note.Speed * 15f * (float)(note.FloorPosition - GetCurSu(realTime));
+				if(value >= note.EndTime)
+				{
+					if(!noteInstances[i].Judged){
+						noteInstances[i].Judged = true;
+						//EmitSignal();
+					}
+				}
+				var newY = StageSize.Y/7.5f * note.Speed * (float)(note.FloorPosition - GetCurSu(realTime));
 				newY = note.Above == 1 ? newY : -newY;
 				noteInstances[i].Position = new Vector2(noteInstances[i].Position.X, newY);
 			}
-
 		}
 	}
 
@@ -101,7 +109,6 @@ public partial class JudgeLineNode : Sprite2D
 			var x = ((float)StageSize.X) / 1350.0f;
 			var posX = noteInfo.PositionX * x;
 			float posY = (float)noteInfo.FloorPosition;
-			GD.Print(x);
 			if (instance.NoteInfo.Above != 1) { posY = -posY; }
 			instance.Position = new Vector2(posX, posY);
 			AddChild(instance);

@@ -311,7 +311,7 @@ namespace Phigodot.ChartStructure
                 }
             }
 
-            return floorPosition * 7.5;
+            return floorPosition;
         }
 
     }
@@ -578,7 +578,7 @@ namespace Phigodot.ChartStructure
                 }
 
 
-                foreach (var layer in line.EventLayers)
+                foreach (var layer in line.EventLayers.OrEmptyIfNull())
                 {
 
                     // Not necessary.
@@ -599,14 +599,13 @@ namespace Phigodot.ChartStructure
                     //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
                     //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
                     // }
-
-
-                    foreach (var e in layer.SpeedEvents)
+                    if(layer.SpeedEvents == null) continue;
+                    foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
                     {
                         e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
                         e.EndTime.RealTime = BeatTime2RealTime(e.EndTime);
                     }
-                    foreach (var e in layer.SpeedEvents)
+                    foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
                     {
 
                         // Real end time calculate.

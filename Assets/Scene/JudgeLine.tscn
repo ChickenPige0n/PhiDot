@@ -1,17 +1,31 @@
 [gd_scene load_steps=7 format=3 uid="uid://c2qhwt3y0tum6"]
 
-[ext_resource type="Texture2D" uid="uid://dyxnuxlst4mxc" path="res://Assets/Image/Materials/White.png" id="1_hyxp6"]
+[ext_resource type="Texture2D" uid="uid://wramkkqgmk13" path="res://Assets/Image/Materials/JudgeLine.png" id="1_7u07b"]
 [ext_resource type="Script" path="res://Assets/Script/JudgeLineNode.cs" id="2_6herl"]
 [ext_resource type="PackedScene" uid="uid://q0ardap0o4oc" path="res://Assets/Scene/Note.tscn" id="3_hi1ry"]
 [ext_resource type="Texture2D" uid="uid://d0u0mxo74neuc" path="res://Assets/Image/Materials/Tap.png" id="4_scxgl"]
 [ext_resource type="Texture2D" uid="uid://bd1egl7ajtwcr" path="res://Assets/Image/Materials/Flick.png" id="5_08pr8"]
 [ext_resource type="Texture2D" uid="uid://mcyvk8q2gfye" path="res://Assets/Image/Materials/Drag.png" id="6_7qehh"]
 
-[node name="JudgeLine" type="Sprite2D"]
-scale = Vector2(100, 0.15)
-texture = ExtResource("1_hyxp6")
+[node name="JudgeLine" type="Sprite2D" node_paths=PackedStringArray("Idex")]
+texture = ExtResource("1_7u07b")
 script = ExtResource("2_6herl")
-NoteScene = ExtResource("3_hi1ry")
 TapTexture = ExtResource("4_scxgl")
 FlickTexture = ExtResource("5_08pr8")
 DragTexture = ExtResource("6_7qehh")
+Idex = NodePath("Label")
+NoteScene = ExtResource("3_hi1ry")
+
+[node name="Label" type="Label" parent="."]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -980.0
+offset_top = -1.5
+offset_right = -940.0
+offset_bottom = 21.5
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+vertical_alignment = 1
