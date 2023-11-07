@@ -63,14 +63,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_di470")
-ScoreLabel = NodePath("UI/Score")
-SongNameLabel = NodePath("UI/SongName")
-DiffLabel = NodePath("UI/Difficulty")
-GameModeLabel = NodePath("ComboUI/GameMode")
-ComboLabel = NodePath("ComboUI/Combo")
+ScoreLabel = NodePath("LabelMargin/Score")
+SongNameLabel = NodePath("LabelMargin/SongName")
+DiffLabel = NodePath("LabelMargin/Difficulty")
+GameModeLabel = NodePath("ComboMargin/ComboUI/GameMode")
+ComboLabel = NodePath("ComboMargin/ComboUI/Combo")
 BackGroundImage = NodePath("BackGround")
 progressBar = NodePath("ProgressBar")
-PauseUI = NodePath("PauseUI")
+PauseUI = NodePath("PausedUI")
 Music = NodePath("SFX/Music")
 TapSFX = NodePath("SFX/Tap")
 FlickSFX = NodePath("SFX/Flick")
@@ -120,29 +120,34 @@ max_value = 1.0
 step = 0.0
 show_percentage = false
 
-[node name="ComboUI" type="VBoxContainer" parent="."]
+[node name="ComboMargin" type="MarginContainer" parent="."]
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_bottom = 57.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 15
+
+[node name="ComboUI" type="VBoxContainer" parent="ComboMargin"]
+layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 0
 theme_override_constants/separation = -5
 
-[node name="Combo" type="Label" parent="ComboUI"]
+[node name="Combo" type="Label" parent="ComboMargin/ComboUI"]
 layout_mode = 2
 text = "200"
 label_settings = SubResource("LabelSettings_tqg14")
 horizontal_alignment = 1
 
-[node name="GameMode" type="Label" parent="ComboUI"]
+[node name="GameMode" type="Label" parent="ComboMargin/ComboUI"]
 layout_mode = 2
 text = "Combo"
 label_settings = SubResource("LabelSettings_yrfku")
 horizontal_alignment = 1
 
-[node name="UI" type="MarginContainer" parent="."]
+[node name="LabelMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -154,7 +159,7 @@ theme_override_constants/margin_top = 25
 theme_override_constants/margin_right = 25
 theme_override_constants/margin_bottom = 25
 
-[node name="Pause" type="TextureButton" parent="UI"]
+[node name="Pause" type="TextureButton" parent="LabelMargin"]
 custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -162,7 +167,7 @@ size_flags_vertical = 0
 texture_normal = ExtResource("2_sva1u")
 stretch_mode = 4
 
-[node name="Score" type="Label" parent="UI"]
+[node name="Score" type="Label" parent="LabelMargin"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
@@ -170,14 +175,14 @@ text = "1000000"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
 
-[node name="SongName" type="Label" parent="UI"]
+[node name="SongName" type="Label" parent="LabelMargin"]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 8
 text = "Unknown"
 label_settings = ExtResource("8_5as7v")
 
-[node name="Difficulty" type="Label" parent="UI"]
+[node name="Difficulty" type="Label" parent="LabelMargin"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
@@ -187,7 +192,7 @@ text = "SP  Lv.?"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
 
-[node name="PauseUI" type="Control" parent="."]
+[node name="PausedUI" type="Control" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -196,7 +201,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ColorRect" type="ColorRect" parent="PauseUI"]
+[node name="ColorRect" type="ColorRect" parent="PausedUI"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -205,7 +210,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 1, 1, 0.356863)
 
-[node name="HBoxContainer" type="HBoxContainer" parent="PauseUI"]
+[node name="HBoxContainer" type="HBoxContainer" parent="PausedUI"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -220,23 +225,23 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="ExitButton" type="Button" parent="PauseUI/HBoxContainer"]
+[node name="ExitButton" type="Button" parent="PausedUI/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 text = "Exit
 "
 
-[node name="RestartButton" type="Button" parent="PauseUI/HBoxContainer"]
+[node name="RestartButton" type="Button" parent="PausedUI/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 text = "Restart"
 
-[node name="ResumeButton" type="Button" parent="PauseUI/HBoxContainer"]
+[node name="ResumeButton" type="Button" parent="PausedUI/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 text = "Continue"
 
-[connection signal="pressed" from="UI/Pause" to="." method="Pause"]
-[connection signal="pressed" from="PauseUI/HBoxContainer/ExitButton" to="." method="Exit"]
-[connection signal="pressed" from="PauseUI/HBoxContainer/RestartButton" to="." method="Restart"]
-[connection signal="pressed" from="PauseUI/HBoxContainer/ResumeButton" to="." method="Pause"]
+[connection signal="pressed" from="LabelMargin/Pause" to="." method="Pause"]
+[connection signal="pressed" from="PausedUI/HBoxContainer/ExitButton" to="." method="Exit"]
+[connection signal="pressed" from="PausedUI/HBoxContainer/RestartButton" to="." method="Restart"]
+[connection signal="pressed" from="PausedUI/HBoxContainer/ResumeButton" to="." method="Pause"]

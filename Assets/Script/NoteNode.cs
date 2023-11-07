@@ -19,7 +19,7 @@ namespace Phigodot.Game
 			}
 			set
 			{
-				if(!_judged)
+				if(!_judged && value)
 				{
 					EmitSignal(SignalName.OnJudjed,GlobalPosition,(int)JudgeType.perfect,(int)NoteInfo.Type);
 				}

@@ -605,7 +605,6 @@ namespace Phigodot.ChartStructure
             PerfectCount = 0;
             GoodCount = 0;
             MissCount = 0;
-            NoteSum = 0;
             judgeStatus = JudgeType.perfect;
         }
     }

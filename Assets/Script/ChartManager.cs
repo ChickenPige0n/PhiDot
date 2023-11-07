@@ -8,6 +8,7 @@ using Phigodot.ChartStructure;
 using Microsoft.VisualBasic;
 using System.Drawing;
 using Color = Godot.Color;
+using Newtonsoft.Json.Linq;
 
 namespace Phigodot.Game
 {
@@ -84,10 +85,18 @@ namespace Phigodot.Game
 		public void Restart()
 		{
 			PauseUI.Visible = !PauseUI.Visible;
-			isPlaying = true;
-			Music.Play();
 			Time = 0.0;
 			PlaybackTime = 0.0;
+			Chart.JudgeData.RevertJudge();
+			Combo = 0;
+			Score = 0;
+			foreach (var line in judgeLineInstances){
+				foreach(var noteNode in line.noteInstances){
+					noteNode.Judged = false;
+				}
+			}
+			isPlaying = true;
+			Music.Play();
 		}
 
 		public void Exit()
