@@ -11,12 +11,6 @@ using Color = Godot.Color;
 
 namespace Phigodot.Game
 {
-	public enum JudgeType
-	{
-		perfect,
-		good,
-		miss
-	}
 
 	// 主程序类
 	public partial class ChartManager : Control
@@ -45,17 +39,19 @@ namespace Phigodot.Game
 		[Export] public Control PauseUI;
 		#endregion
 
-
+		public Vector2 WindowSize;
+		public Vector2 StageSize;
 
 
 		#region SFX
-		
+
 		[Export] public AudioStreamPlayer Music;
 		[Export] public AudioStreamPlayer TapSFX;
 		[Export] public AudioStreamPlayer FlickSFX;
 		[Export] public AudioStreamPlayer DragSFX;
-		
+
 		#endregion
+
 		[Export] public GpuParticles2D HitParticle;
 		[Export] public PackedScene HEScene;
 		[Export] public PackedScene JudgeLineScene;
@@ -136,13 +132,18 @@ namespace Phigodot.Game
 
 		public Color PerfectColor = new(0.839216f, 0.741176f, 0.360784f, 1);
 		public Color GoodColor = new(0x31cce1);
-		public void JudgedEventHandler(Vector2 globalPosition, int judgeType, int noteType)
+		public void JudgedEventHandler(Vector2 globalPosition, int judgeIntType, int noteIntType)
 		{
-			var judgeEnumType = (JudgeType)judgeType;
-			var noteEnumType = (NoteType)noteType;
+			var judgeType = (JudgeType)judgeIntType;
+			var noteType = (NoteType)noteIntType;
+			
+			Chart.JudgeData.Judge(judgeType);
+			Combo = Chart.JudgeData.MaxCombo;
+			Score = Chart.JudgeData.CalcScore();
+
 			AnimatedSprite2D effectInstance = HEScene.Instantiate<AnimatedSprite2D>();
 			Color color = PerfectColor;
-			switch (judgeEnumType)
+			switch (judgeType)
 			{
 				case JudgeType.perfect:
 					color = PerfectColor;
@@ -153,15 +154,28 @@ namespace Phigodot.Game
 				default:
 					break;
 			}
-			
+
+			switch (noteType)
+			{
+				case NoteType.Tap:
+					TapSFX.Play();
+					break;
+				case NoteType.Hold:
+					TapSFX.Play();
+					break;
+				case NoteType.Flick:
+					FlickSFX.Play();
+					break;
+				case NoteType.Drag:
+					DragSFX.Play();
+					break;
+			}
+
 			effectInstance.Modulate = color;
 
-			HitParticle.EmitParticle(new Transform2D(),globalPosition,color, color,1);
-			
-			Vector2I windowSize = DisplayServer.WindowGetSize();
-			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
+			HitParticle.EmitParticle(new Transform2D(), globalPosition, color, color, 1);
 
-			effectInstance.Position = globalPosition - (windowSize - StageSize)/2;
+			effectInstance.Position = globalPosition - (WindowSize - StageSize) / 2;
 			AddChild(effectInstance);
 		}
 
@@ -183,14 +197,14 @@ namespace Phigodot.Game
 		// Called every frame. 'delta' is the elapsed time since the previous frame.
 		public override void _Process(double delta)
 		{
-			Vector2I windowSize = DisplayServer.WindowGetSize();
-			Vector2I StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
+			WindowSize = DisplayServer.WindowGetSize();
+			StageSize = new Vector2I((int)((double)WindowSize.Y * AspectRatio), (int)WindowSize.Y);
 
 
 			BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
 
 			this.Size = StageSize;
-			this.Position = (windowSize - StageSize) / 2;
+			this.Position = (WindowSize - StageSize) / 2;
 
 			if (isPlaying)
 			{
@@ -198,11 +212,9 @@ namespace Phigodot.Game
 				PlaybackTime = Music.GetPlaybackPosition();
 				progressBar.Value = PlaybackTime / Music.Stream.GetLength();
 
-				double ChartTime = Chart.RealTime2BeatTime(Time);
-
 				foreach (JudgeLineNode line in judgeLineInstances)
 				{
-					line.ChartTime = ChartTime;
+					line.CalcTime(Time);
 				}
 
 				#region UI Calculate

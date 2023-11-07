@@ -26,46 +26,44 @@ public partial class JudgeLineNode : Sprite2D
 	public Vector2I StageSize;
 	public double AspectRatio = 1.666667d;
 
-	public double ChartTime
+	public void CalcTime(double realTime)
 	{
-		set
+		var chartTime = Chart.RealTime2BeatTime(realTime);
+
+		var EventLayers = Chart.JudgeLineList[LineIndex].EventLayers;
+
+		double xPos = 0;
+		double yPos = 0;
+		double alpha = 0;
+		double rotate = 0;
+
+		foreach (EventLayer layer in EventLayers)
 		{
-			var EventLayers = Chart.JudgeLineList[LineIndex].EventLayers;
+			xPos += layer.MoveXEvents.GetValByTime(chartTime);
+			yPos += layer.MoveYEvents.GetValByTime(chartTime);
+			alpha += layer.AlphaEvents.GetValByTime(chartTime);
+			rotate += layer.RotateEvents.GetValByTime(chartTime);
+		}
 
-			double xPos = 0;
-			double yPos = 0;
-			double alpha = 0;
-			double rotate = 0;
+		Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, -(float)yPos), StageSize) + (StageSize / 2);
+		RotationDegrees = (float)rotate + 180;
+		var m = SelfModulate;
+		SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
-			foreach (EventLayer layer in EventLayers)
+		var noteList = Chart.JudgeLineList[LineIndex].Notes;
+		foreach (RPENote note in noteList.OrEmptyIfNull())
+		{
+			int i = noteList.IndexOf(note);
+			if(chartTime >= note.EndTime)
 			{
-				xPos += layer.MoveXEvents.GetValByTime(value);
-				yPos += layer.MoveYEvents.GetValByTime(value);
-				alpha += layer.AlphaEvents.GetValByTime(value);
-				rotate += layer.RotateEvents.GetValByTime(value);
-			}
-
-			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, -(float)yPos), StageSize) + (StageSize / 2);
-			RotationDegrees = (float)rotate + 180;
-			var m = SelfModulate;
-			SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
-
-			var realTime = Chart.BeatTime2RealTime(value);
-			var noteList = Chart.JudgeLineList[LineIndex].Notes;
-			foreach (RPENote note in noteList.OrEmptyIfNull())
-			{
-				int i = noteList.IndexOf(note);
-				if(value >= note.EndTime)
+				if(!noteInstances[i].Judged)
 				{
-					if(!noteInstances[i].Judged)
-					{
-						noteInstances[i].Judged = true;
-					}
+					noteInstances[i].Judged = true;
 				}
-				var newY = StageSize.Y/7.5f * note.Speed * (float)(note.FloorPosition - GetCurSu(realTime));
-				newY = note.Above == 1 ? newY : -newY;
-				noteInstances[i].Position = new Vector2(noteInstances[i].Position.X, newY);
 			}
+			var newY = StageSize.Y/7.5f * note.Speed * (float)(note.FloorPosition - GetCurSu(realTime));
+			newY = note.Above == 1 ? newY : -newY;
+			noteInstances[i].Position = new Vector2(noteInstances[i].Position.X, newY);
 		}
 	}
 

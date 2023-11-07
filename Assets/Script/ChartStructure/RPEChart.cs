@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Godot;
+using Phigodot.Game;
 using static Phigodot.ChartStructure.Easings;
 
 //generated automatically
@@ -414,13 +415,13 @@ namespace Phigodot.ChartStructure
     }
 
 
-	public enum NoteType : int
-	{
-		Tap = 1,
-		Hold = 2,
-		Flick = 3,
-		Drag = 4,
-	}
+    public enum NoteType : int
+    {
+        Tap = 1,
+        Hold = 2,
+        Flick = 3,
+        Drag = 4,
+    }
     public class RPENote
     {
         [JsonPropertyName("above")]
@@ -551,6 +552,64 @@ namespace Phigodot.ChartStructure
             return source ?? Enumerable.Empty<T>();
         }
     }
+    public enum JudgeType
+    {
+        perfect,
+        good,
+        miss
+    }
+
+
+    public class JudgeManager
+    {
+        public int MaxCombo = 0;
+        public int PerfectCount = 0;
+        public int GoodCount = 0;
+        public int MissCount = 0;
+        public int NoteSum = 0;
+        public JudgeType judgeStatus = JudgeType.perfect;
+
+        public void Judge(JudgeType type)
+        {
+            switch (type)
+            {
+                case JudgeType.perfect:
+                    PerfectCount += 1;
+                    MaxCombo += 1;
+                    break;
+                case JudgeType.good:
+                    GoodCount += 1;
+                    MaxCombo += 1;
+                    if (judgeStatus == JudgeType.perfect) judgeStatus = JudgeType.good;
+                    break;
+                case JudgeType.miss:
+                    MissCount += 1;
+                    MaxCombo = 0;
+                    judgeStatus = JudgeType.miss;
+                    break;
+            }
+        }
+
+        public int CalcScore()
+        {
+            return (int)
+                    (
+                    100000f*((float)MaxCombo/(float)NoteSum)
+                    + 900000f*((float)PerfectCount/(float)NoteSum)
+                    + 0.75f*900000f*((float)GoodCount/(float)NoteSum)
+                    );
+        }
+        public void RevertJudge()
+        {
+            MaxCombo = 0;
+            PerfectCount = 0;
+            GoodCount = 0;
+            MissCount = 0;
+            NoteSum = 0;
+            judgeStatus = JudgeType.perfect;
+        }
+    }
+
 
     public class ChartRPE
     {
@@ -570,6 +629,10 @@ namespace Phigodot.ChartStructure
         [JsonPropertyName("judgeLineList")]
         public List<JudgeLineJson> JudgeLineList { get; set; }
 
+
+        [JsonIgnore]
+        public JudgeManager JudgeData = new();
+
         /// <summary>
         /// 预计算一些数值
         /// </summary>
@@ -577,6 +640,7 @@ namespace Phigodot.ChartStructure
         {
             foreach (var line in JudgeLineList)
             {
+                JudgeData.NoteSum += line.NumOfNotes;
 
                 // RealTime Calculate.
                 foreach (var note in line.Notes.OrEmptyIfNull())
@@ -607,7 +671,7 @@ namespace Phigodot.ChartStructure
                     //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
                     //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
                     // }
-                    if(layer.SpeedEvents == null) continue;
+                    if (layer.SpeedEvents == null) continue;
                     foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
                     {
                         e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
