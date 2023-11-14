@@ -17,13 +17,17 @@ public partial class JudgeLineNode : Sprite2D
 	[Export] public Texture2D TapTexture;
 	[Export] public Texture2D FlickTexture;
 	[Export] public Texture2D DragTexture;
+	public (Texture2D head, Texture2D body, Texture2D tail) HoldTextures;
 
 	[Export] public Label Idex;
 
 	[Export] public PackedScene NoteScene;
+
+	[Export] public Sprite2D TextureLine;
 	public List<NoteNode> noteInstances = new List<NoteNode>();
 
-	public Vector2I StageSize;
+	public Vector2 StageSize;
+	public Vector2 WindowSize;
 	public double AspectRatio = 1.666667d;
 
 	public void CalcTime(double realTime)
@@ -45,26 +49,32 @@ public partial class JudgeLineNode : Sprite2D
 			rotate += layer.RotateEvents.GetValByTime(chartTime);
 		}
 
-		Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, -(float)yPos), StageSize) + (StageSize / 2);
-		RotationDegrees = (float)rotate + 180;
+		Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, (float)yPos), StageSize) + (StageSize / 2);
+		RotationDegrees = (float)rotate;
 		var m = SelfModulate;
-		SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
+	 	TextureLine.SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
 		var noteList = Chart.JudgeLineList[LineIndex].Notes;
 		foreach (RPENote note in noteList.OrEmptyIfNull())
 		{
 			int i = noteList.IndexOf(note);
-			if(chartTime >= note.EndTime)
+			if (chartTime >= note.EndTime)
 			{
-				if(!noteInstances[i].Judged)
+				if (!noteInstances[i].Judged)
 				{
 					noteInstances[i].Judged = true;
 				}
 			}
-			var newY = StageSize.Y/7.5f * note.Speed * (float)(note.FloorPosition - GetCurSu(realTime));
+			var newY = StageSize.Y / 7.5f * note.Speed * (float)(GetCurSu(realTime) - note.FloorPosition);
 			newY = note.Above == 1 ? newY : -newY;
 			noteInstances[i].Position = new Vector2(noteInstances[i].Position.X, newY);
 		}
+	}
+	public void CalcScale()
+	{
+		float newScale = 0;
+		newScale = 2.5f * StageSize.DistanceTo(Vector2.Zero) / this.TextureLine.Texture.GetWidth();
+		this.TextureLine.Scale = new Vector2(newScale,newScale);
 	}
 
 	public void Init(ChartRPE chart, int lineIndex)
@@ -72,9 +82,17 @@ public partial class JudgeLineNode : Sprite2D
 		this.Chart = chart;
 		this.LineIndex = lineIndex;
 
-		Vector2I windowSize = DisplayServer.WindowGetSize();
-		StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
 
+		var ResPackManager = GetNode<ResPackManager>("/root/ResPackManager");
+
+		TapTexture = ResPackManager.CurPack.TapTexture;
+		FlickTexture = ResPackManager.CurPack.FlickTexture;
+		DragTexture = ResPackManager.CurPack.DragTexture;
+		HoldTextures = ResPackManager.CurPack.HoldTextures;
+
+		WindowSize = DisplayServer.WindowGetSize();
+		StageSize = new Vector2I((int)((double)WindowSize.Y * AspectRatio), (int)WindowSize.Y);
+		CalcScale();
 		// Note Init
 		Idex.Text = LineIndex.ToString();
 		var noteList = chart.JudgeLineList[lineIndex].Notes;
@@ -86,22 +104,23 @@ public partial class JudgeLineNode : Sprite2D
 			switch (noteInfo.Type)
 			{
 				case NoteType.Tap:
-					instance.Texture = TapTexture;
+					instance.HeadSprite.Texture = TapTexture;
 					break;
 				case NoteType.Hold:
-					instance.Texture = TapTexture;//hold
+					instance.HeadSprite.Texture = HoldTextures.head;
+					instance.BodySprite.Texture = HoldTextures.body;
+					instance.TailSprite.Texture = HoldTextures.tail;//hold
 					break;
 				case NoteType.Flick:
-					instance.Texture = FlickTexture;
+					instance.HeadSprite.Texture = FlickTexture;
 					break;
 				case NoteType.Drag:
-					instance.Texture = DragTexture;
+					instance.HeadSprite.Texture = DragTexture;
 					break;
 				default:
 					break;
 			}
-			var x = ((float)StageSize.X) / 1350.0f;
-			var posX = noteInfo.PositionX * x;
+			var posX = noteInfo.PositionX * (StageSize.X / 1350.0f);
 			float posY = (float)noteInfo.FloorPosition;
 			if (instance.NoteInfo.Above != 1) { posY = -posY; }
 			instance.Position = new Vector2(posX, posY);
@@ -130,12 +149,5 @@ public partial class JudgeLineNode : Sprite2D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-	}
-
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
-		Vector2I windowSize = DisplayServer.WindowGetSize();
-		StageSize = new Vector2I((int)((double)windowSize.Y * AspectRatio), (int)windowSize.Y);
 	}
 }

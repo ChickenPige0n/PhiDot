@@ -7,6 +7,10 @@ namespace Phigodot.Game
 	{
 		[Signal]
 		public delegate void OnJudjedEventHandler(Vector2 globalPosition,int judgeType,int noteType);
+
+		[Export] public Sprite2D HeadSprite;
+		[Export] public Sprite2D BodySprite;
+		[Export] public Sprite2D TailSprite;
 		
 		[Export] public Label floorPos;
 		public RPENote NoteInfo;

@@ -59,7 +59,7 @@ namespace Phigodot.Game
 
 
 
-		public List<JudgeLineNode> judgeLineInstances = new List<JudgeLineNode>();
+		public List<JudgeLineNode> JudgeLineInstances = new List<JudgeLineNode>();
 
 
 		public double PlaybackTime;
@@ -90,7 +90,7 @@ namespace Phigodot.Game
 			Chart.JudgeData.RevertJudge();
 			Combo = 0;
 			Score = 0;
-			foreach (var line in judgeLineInstances){
+			foreach (var line in JudgeLineInstances){
 				foreach(var noteNode in line.noteInstances){
 					noteNode.Judged = false;
 				}
@@ -125,10 +125,10 @@ namespace Phigodot.Game
 			{
 				int i = Chart.JudgeLineList.IndexOf(Line);
 				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
+				AddChild(LineInstance);
 				LineInstance.Init(Chart, i);
 				LineInstance.AspectRatio = this.AspectRatio;
-				AddChild(LineInstance);
-				judgeLineInstances.Add(LineInstance);
+				JudgeLineInstances.Add(LineInstance);
 
 				foreach (NoteNode note in LineInstance.noteInstances)
 				{
@@ -206,9 +206,17 @@ namespace Phigodot.Game
 		// Called every frame. 'delta' is the elapsed time since the previous frame.
 		public override void _Process(double delta)
 		{
+			Vector2 newSize = DisplayServer.WindowGetSize();
+			StageSize = new Vector2I((int)((double)newSize.Y * AspectRatio), (int)newSize.Y);
+			if (!newSize.IsEqualApprox(WindowSize))
+			{
+				foreach(var line in JudgeLineInstances){
+					line.WindowSize = newSize;
+					line.StageSize = StageSize;
+					line.CalcScale();
+				}
+			}
 			WindowSize = DisplayServer.WindowGetSize();
-			StageSize = new Vector2I((int)((double)WindowSize.Y * AspectRatio), (int)WindowSize.Y);
-
 
 			BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
 
@@ -221,7 +229,7 @@ namespace Phigodot.Game
 				PlaybackTime = Music.GetPlaybackPosition();
 				progressBar.Value = PlaybackTime / Music.Stream.GetLength();
 
-				foreach (JudgeLineNode line in judgeLineInstances)
+				foreach (JudgeLineNode line in JudgeLineInstances)
 				{
 					line.CalcTime(Time);
 				}
