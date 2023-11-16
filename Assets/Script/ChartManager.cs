@@ -201,6 +201,15 @@ namespace Phigodot.Game
 			var absPath = ProjectSettings.GlobalizePath("res://Assets/ExampleChart/17666805");
 			LoadChart(absPath);
 
+			var ResPackManager = GetNode<ResPackManager>("/root/ResPackManager");
+			var curPack = ResPackManager.CurPack;
+			var HEInstance = HEScene.Instantiate<AnimatedSprite2D>();
+			HEInstance.SpriteFrames = curPack.HitEffectFrames;
+
+			var Scene = new PackedScene();
+			Scene.Pack(HEInstance); 
+			HEScene = Scene;
+			
 			PlayChart();
 		}
 		// Called every frame. 'delta' is the elapsed time since the previous frame.

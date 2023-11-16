@@ -14,10 +14,7 @@ public partial class JudgeLineNode : Sprite2D
 	private int LineIndex;
 	private ChartRPE Chart;
 
-	[Export] public Texture2D TapTexture;
-	[Export] public Texture2D FlickTexture;
-	[Export] public Texture2D DragTexture;
-	public (Texture2D head, Texture2D body, Texture2D tail) HoldTextures;
+	public ResPack CurPack;
 
 	[Export] public Label Idex;
 
@@ -75,6 +72,11 @@ public partial class JudgeLineNode : Sprite2D
 		float newScale = 0;
 		newScale = 2.5f * StageSize.DistanceTo(Vector2.Zero) / this.TextureLine.Texture.GetWidth();
 		this.TextureLine.Scale = new Vector2(newScale,newScale);
+
+		// TODO:
+		// Support mutable note size.
+		newScale = 175.0f * (CurPack.TapTexture.GetSize().X * 1350.0f/StageSize.X);
+		
 	}
 
 	public void Init(ChartRPE chart, int lineIndex)
@@ -84,11 +86,7 @@ public partial class JudgeLineNode : Sprite2D
 
 
 		var ResPackManager = GetNode<ResPackManager>("/root/ResPackManager");
-
-		TapTexture = ResPackManager.CurPack.TapTexture;
-		FlickTexture = ResPackManager.CurPack.FlickTexture;
-		DragTexture = ResPackManager.CurPack.DragTexture;
-		HoldTextures = ResPackManager.CurPack.HoldTextures;
+		CurPack = ResPackManager.CurPack;
 
 		WindowSize = DisplayServer.WindowGetSize();
 		StageSize = new Vector2I((int)((double)WindowSize.Y * AspectRatio), (int)WindowSize.Y);
@@ -104,18 +102,18 @@ public partial class JudgeLineNode : Sprite2D
 			switch (noteInfo.Type)
 			{
 				case NoteType.Tap:
-					instance.HeadSprite.Texture = TapTexture;
+					instance.HeadSprite.Texture = CurPack.TapTexture;
 					break;
 				case NoteType.Hold:
-					instance.HeadSprite.Texture = HoldTextures.head;
-					instance.BodySprite.Texture = HoldTextures.body;
-					instance.TailSprite.Texture = HoldTextures.tail;//hold
+					instance.HeadSprite.Texture = CurPack.HoldTextures.head;
+					instance.BodySprite.Texture = CurPack.HoldTextures.body;
+					instance.TailSprite.Texture = CurPack.HoldTextures.tail;//hold
 					break;
 				case NoteType.Flick:
-					instance.HeadSprite.Texture = FlickTexture;
+					instance.HeadSprite.Texture = CurPack.FlickTexture;
 					break;
 				case NoteType.Drag:
-					instance.HeadSprite.Texture = DragTexture;
+					instance.HeadSprite.Texture = CurPack.DragTexture;
 					break;
 				default:
 					break;
