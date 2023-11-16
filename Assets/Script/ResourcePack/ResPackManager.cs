@@ -94,12 +94,12 @@ namespace Phigodot.Game
             var fHeight = (int)(size.Y / HEInfo.line);
 
             frames.ClearAll();
-            for (int i = 1; i <= HEInfo.line; i++)
+            for (int i = 0; i < HEInfo.line; i++)
             {
-                for (int j = 1; j <= HEInfo.column; j++)
+                for (int j = 0; j < HEInfo.column; j++)
                 {
                     var frame = (AtlasTexture)HETexture.Duplicate(true);
-                    frame.Region = new Rect2(i * fWidth, j * fHeight, fWidth, fHeight);
+                    frame.Region = new Rect2(j * fWidth, i * fHeight, fWidth, fHeight);
                     frames.AddFrame(new StringName("default"), frame);
                 }
             }
