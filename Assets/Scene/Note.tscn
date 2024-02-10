@@ -1,37 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://q0ardap0o4oc"]
 
-[ext_resource type="Script" path="res://Assets/Script/NoteNode.cs" id="1_hiy4y"]
+[ext_resource type="Script" path="res://Assets/Script/Game/NoteNode.cs" id="1_3qjq2"]
 
-[node name="Note" type="Sprite2D" node_paths=PackedStringArray("HeadSprite", "BodySprite", "TailSprite", "floorPos")]
-scale = Vector2(0.15, 0.15)
-script = ExtResource("1_hiy4y")
-HeadSprite = NodePath("Head")
-BodySprite = NodePath("Body")
-TailSprite = NodePath("Tail")
-floorPos = NodePath("Label")
-
-[node name="Label" type="Label" parent="."]
+[node name="Note" type="Node2D"]
 visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -0.5
-offset_top = -0.5
-offset_right = 639.5
-offset_bottom = 191.5
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(-1, -1)
-pivot_offset = Vector2(161.05, -94.41)
-theme_override_font_sizes/font_size = 140
-text = "21311231"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Head" type="Sprite2D" parent="."]
-
-[node name="Body" type="Sprite2D" parent="."]
-
-[node name="Tail" type="Sprite2D" parent="."]
+script = ExtResource("1_3qjq2")

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Phigodot.Game
+namespace Phidot.Game
 {
     public partial class ChartData
     {

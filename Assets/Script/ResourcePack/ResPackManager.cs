@@ -4,7 +4,7 @@ using System.IO;
 using Godot;
 using YamlDotNet.Serialization;
 
-namespace Phigodot.Game
+namespace Phidot.Game
 {
     public partial class ResPackManager : Node
     {
@@ -16,26 +16,34 @@ namespace Phigodot.Game
             var absPath = ProjectSettings.GlobalizePath("res://Assets/ResPacks");
             foreach (var dir in Directory.EnumerateDirectories(absPath))
             {
-                var infoPath = Path.Combine(dir, "info.yml");
-                if (File.Exists(infoPath))
+                LoadFromDir(dir);
+            }
+            CurPack = new ResPack(ResPackList[0]);
+        }
+
+        public void LoadFromDir(string dir)
+        {
+            var infoPath = Path.Combine(dir, "info.yml");
+
+            if (File.Exists(infoPath))
+            {
+                var deserializer = new DeserializerBuilder().Build();
+                try
                 {
-                    var deserializer = new DeserializerBuilder().Build();
-                    try
-                    {
-                        var info = deserializer.Deserialize<ResPackInfo>(File.ReadAllText(infoPath));
-                        info.DirPath = dir;
-                        ResPackList.Add(info);
-                    }
-                    catch (Exception e)
-                    {
-                        GD.Print(e.StackTrace);
-                    }
+                    var info = deserializer.Deserialize<ResPackInfo>(File.ReadAllText(infoPath));
+                    info.DirPath = dir;
+                    ResPackList.Add(info);
+                }
+                catch (Exception e)
+                {
+                    GD.Print(e.Data);
                 }
             }
-            if (ResPackList.Count == 1)
-            {
-                CurPack = new ResPack(ResPackList[0]);
-            }
+        }
+
+        public void SetCurPack(int index)
+        {
+            CurPack = new ResPack(ResPackList[index]);
         }
     }
 
@@ -49,9 +57,11 @@ namespace Phigodot.Game
     {
         public string name { get; set; }
         public string author { get; set; }
+        public string description { get; set; }
         public List<int> hitFx { get; set; }
         public List<int> holdAtlas { get; set; }
         public List<int> holdAtlasMH { get; set; }
+        public float hitFxScale { get; set; } = 1.0f;
 
         [YamlIgnore]
         public string DirPath { get; set; }
@@ -81,7 +91,7 @@ namespace Phigodot.Game
         public AudioStream FlickSound;
         public AudioStream DragSound;
 
-
+        public float HitFxScale = 1.0f;
 
 
 
@@ -100,10 +110,10 @@ namespace Phigodot.Game
                 {
                     var frame = (AtlasTexture)HETexture.Duplicate(true);
                     frame.Region = new Rect2(j * fWidth, i * fHeight, fWidth, fHeight);
-                    frames.AddFrame(new StringName("default"), frame);
+                    frames.AddFrame("default", frame);
                 }
             }
-            frames.SetAnimationSpeed(new StringName("default"), 60);
+            frames.SetAnimationSpeed("default", HEInfo.line * HEInfo.column * 2);
             return frames;
         }
 
@@ -118,7 +128,7 @@ namespace Phigodot.Game
             head.Region = new Rect2(0, size.Y - info.head, size.X, info.head);
             body.Region = new Rect2(0, info.tail, size.X, size.Y - info.head - info.tail);
             tail.Region = new Rect2(0, 0, size.X, info.tail);
-            
+
             return (head, body, tail);
         }
 
@@ -156,7 +166,9 @@ namespace Phigodot.Game
 
                 TapSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "click.ogg"));
                 FlickSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "flick.ogg"));
-                DragSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "click.ogg"));
+                DragSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "drag.ogg"));
+
+                HitFxScale = info.hitFxScale;
 
             }
             catch (IOException e)

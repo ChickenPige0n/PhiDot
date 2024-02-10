@@ -1,48 +1,21 @@
-[gd_scene load_steps=21 format=3 uid="uid://dplevybj8qnbv"]
+[gd_scene load_steps=16 format=3 uid="uid://dplevybj8qnbv"]
 
-[ext_resource type="Script" path="res://Assets/Script/ChartManager.cs" id="1_di470"]
+[ext_resource type="Script" path="res://Assets/Script/Game/ChartManager.cs" id="1_crdhs"]
 [ext_resource type="FontFile" uid="uid://c8668gfxciipd" path="res://Assets/Font/Phigros.ttf" id="1_vlqfs"]
 [ext_resource type="AudioStream" uid="uid://djgjr220x0tnl" path="res://Assets/Audio/Effects/Tap_or_Hold.wav" id="2_clytu"]
 [ext_resource type="Texture2D" uid="uid://bjka5qa0v58p6" path="res://Assets/Image/Materials/Suspend_Shrink.png" id="2_sva1u"]
 [ext_resource type="PackedScene" uid="uid://c2qhwt3y0tum6" path="res://Assets/Scene/JudgeLine.tscn" id="2_uchdx"]
 [ext_resource type="PackedScene" uid="uid://tla4ta022aiv" path="res://Assets/Scene/HitEffect.tscn" id="3_b2rbh"]
 [ext_resource type="AudioStream" uid="uid://bfu6ni4pbrqbh" path="res://Assets/Audio/Effects/Drag.wav" id="3_lavxw"]
+[ext_resource type="Shader" path="res://Assets/Shaders/Blur.gdshader" id="4_6y06q"]
 [ext_resource type="AudioStream" uid="uid://cebrxja6gc661" path="res://Assets/Audio/Effects/Flick.wav" id="4_wm3aq"]
-[ext_resource type="Texture2D" uid="uid://b638lyqpqf7s5" path="res://Assets/Image/Materials/HitEffect/HitParticle.bmp" id="4_xfyfp"]
 [ext_resource type="LabelSettings" uid="uid://b8nqbnsnytrtd" path="res://Assets/Font/UIFontSettings.tres" id="8_5as7v"]
 
-[sub_resource type="Gradient" id="Gradient_sqnbw"]
-offsets = PackedFloat32Array(0, 0.721311, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.760784, 1, 1, 1, 0)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_onk4b"]
+shader = ExtResource("4_6y06q")
+shader_parameter/screen_blur = 3.971
 
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_8cxok"]
-gradient = SubResource("Gradient_sqnbw")
-
-[sub_resource type="Curve" id="Curve_djcv5"]
-_data = [Vector2(0, 1), 0.0, -1.76609, 0, 0, Vector2(1, 0.175824), -0.0457873, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_4aofr"]
-curve = SubResource("Curve_djcv5")
-
-[sub_resource type="Curve" id="Curve_gxi3f"]
-_data = [Vector2(0, 1), 0.0, -0.0173512, 0, 0, Vector2(1, 0.78022), -0.699301, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_1i0mr"]
-curve = SubResource("Curve_gxi3f")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0sl2w"]
-particle_flag_disable_z = true
-emission_shape_scale = Vector3(0, 0, 0)
-radial_velocity_min = 800.0
-radial_velocity_max = 1300.0
-radial_velocity_curve = SubResource("CurveTexture_4aofr")
-gravity = Vector3(0, 0, 0)
-scale_min = 0.4
-scale_max = 0.5
-scale_curve = SubResource("CurveTexture_1i0mr")
-color_ramp = SubResource("GradientTexture1D_8cxok")
+[sub_resource type="CanvasTexture" id="CanvasTexture_twl7g"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g1su1"]
 
@@ -54,7 +27,7 @@ font_size = 40
 font = ExtResource("1_vlqfs")
 font_size = 20
 
-[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "progressBar", "PauseUI", "Music", "TapSFX", "FlickSFX", "DragSFX", "HitParticle")]
+[node name="Game" type="Control" node_paths=PackedStringArray("ScoreLabel", "SongNameLabel", "DiffLabel", "GameModeLabel", "ComboLabel", "BackGroundImage", "progressBar", "PauseUI", "LabelUI", "ComboUI", "PauseBtn", "Music", "TapSFX", "FlickSFX", "DragSFX")]
 clip_contents = true
 layout_mode = 3
 anchors_preset = 15
@@ -62,7 +35,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_di470")
+script = ExtResource("1_crdhs")
 ScoreLabel = NodePath("LabelMargin/Score")
 SongNameLabel = NodePath("LabelMargin/SongName")
 DiffLabel = NodePath("LabelMargin/Difficulty")
@@ -71,27 +44,27 @@ ComboLabel = NodePath("ComboMargin/ComboUI/Combo")
 BackGroundImage = NodePath("BackGround")
 progressBar = NodePath("ProgressBar")
 PauseUI = NodePath("PausedUI")
+LabelUI = NodePath("LabelMargin")
+ComboUI = NodePath("ComboMargin")
+PauseBtn = NodePath("LabelMargin/Pause")
 Music = NodePath("SFX/Music")
 TapSFX = NodePath("SFX/Tap")
 FlickSFX = NodePath("SFX/Flick")
 DragSFX = NodePath("SFX/Drag")
-HitParticle = NodePath("HitParticle")
 HEScene = ExtResource("3_b2rbh")
 JudgeLineScene = ExtResource("2_uchdx")
 
 [node name="BackGround" type="Sprite2D" parent="."]
-modulate = Color(0.607843, 0.607843, 0.607843, 1)
+modulate = Color(0.776471, 0.776471, 0.776471, 1)
 texture_filter = 4
+scale = Vector2(0.540084, 0.54)
 centered = false
 
-[node name="HitParticle" type="GPUParticles2D" parent="."]
-emitting = false
-amount = 4
-process_material = SubResource("ParticleProcessMaterial_0sl2w")
-texture = ExtResource("4_xfyfp")
-lifetime = 0.5
-explosiveness = 1.0
-visibility_rect = Rect2(0, 0, 0, 0)
+[node name="Sprite2D" type="Sprite2D" parent="BackGround"]
+material = SubResource("ShaderMaterial_onk4b")
+position = Vector2(1066.25, 599.75)
+scale = Vector2(2133.5, 1200.5)
+texture = SubResource("CanvasTexture_twl7g")
 
 [node name="SFX" type="Node2D" parent="."]
 
@@ -99,17 +72,18 @@ visibility_rect = Rect2(0, 0, 0, 0)
 
 [node name="Tap" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("2_clytu")
-max_polyphony = 100
+max_polyphony = 5
 
 [node name="Drag" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("3_lavxw")
-max_polyphony = 100
+max_polyphony = 5
 
 [node name="Flick" type="AudioStreamPlayer" parent="SFX"]
 stream = ExtResource("4_wm3aq")
-max_polyphony = 100
+max_polyphony = 5
 
 [node name="ProgressBar" type="ProgressBar" parent="."]
+z_index = 4095
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -121,6 +95,7 @@ step = 0.0
 show_percentage = false
 
 [node name="ComboMargin" type="MarginContainer" parent="."]
+z_index = 4095
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -148,12 +123,12 @@ label_settings = SubResource("LabelSettings_yrfku")
 horizontal_alignment = 1
 
 [node name="LabelMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+z_index = 4095
+layout_mode = 0
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 1352.0
+offset_bottom = 848.0
 theme_override_constants/margin_left = 25
 theme_override_constants/margin_top = 25
 theme_override_constants/margin_right = 25
@@ -171,7 +146,7 @@ stretch_mode = 4
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
-text = "1000000"
+text = "0000000"
 label_settings = ExtResource("8_5as7v")
 horizontal_alignment = 2
 
@@ -194,7 +169,7 @@ horizontal_alignment = 2
 
 [node name="PausedUI" type="Control" parent="."]
 visible = false
-z_index = 1
+z_index = 4096
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

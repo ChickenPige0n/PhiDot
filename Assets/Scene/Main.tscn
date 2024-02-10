@@ -1,0 +1,81 @@
+[gd_scene load_steps=5 format=3 uid="uid://cw1dpmcorca05"]
+
+[ext_resource type="Script" path="res://Assets/Script/UI/SceneManager.cs" id="1_x4fap"]
+[ext_resource type="PackedScene" uid="uid://dplevybj8qnbv" path="res://Assets/Scene/Game.tscn" id="2_hfcpk"]
+[ext_resource type="Script" path="res://Assets/Script/UI/ChartList.gd" id="3_04m01"]
+[ext_resource type="PackedScene" uid="uid://cvdt8hhriva25" path="res://Assets/Scene/UI/ListItem.tscn" id="4_54ii3"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 243.0
+offset_top = 366.0
+offset_right = -260.0
+offset_bottom = -85.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 66
+text = "Load ResPack"
+
+[node name="Button2" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 246.0
+offset_top = 63.0
+offset_right = -287.0
+offset_bottom = -327.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 66
+text = "Load Chart"
+
+[node name="ChartList" type="Control" parent="." node_paths=PackedStringArray("scroll_label", "timer")]
+visible = false
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_04m01")
+item_scene = ExtResource("4_54ii3")
+scroll_label = NodePath("../Label/Label")
+timer = NodePath("../Timer")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.05
+
+[node name="SceneManager" type="Node2D" parent="."]
+script = ExtResource("1_x4fap")
+GameScene = ExtResource("2_hfcpk")
+
+[node name="Label" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 948.0
+offset_right = 1026.0
+offset_bottom = 23.0
+text = "Scroll val: "
+
+[node name="Label" type="Label" parent="Label"]
+layout_mode = 0
+offset_left = 77.0
+offset_right = 177.0
+offset_bottom = 23.0
+
+[connection signal="pressed" from="Button" to="SceneManager" method="Load" binds= ["res_pack"]]
+[connection signal="pressed" from="Button2" to="SceneManager" method="Load" binds= ["chart"]]
+[connection signal="timeout" from="Timer" to="ChartList" method="timeout"]

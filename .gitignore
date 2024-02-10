@@ -18,3 +18,9 @@ mono_crash.*.json
 
 Assets/ExampleChart/
 Assets/ResPacks
+
+android/
+
+addons/
+
+.vscode/

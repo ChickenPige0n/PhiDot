@@ -1,17 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Godot;
-using Phigodot.Game;
-using static Phigodot.ChartStructure.Easings;
+using static Phidot.ChartStructure.Easings;
 
-//generated automatically
 
-namespace Phigodot.ChartStructure
+namespace Phidot.ChartStructure
 {
 
     public class BPMListItem
@@ -121,8 +116,12 @@ namespace Phigodot.ChartStructure
     /// <summary>
     /// RPE带分数时间
     /// </summary>
-    public class Time : List<int>
+    public class Time : List<int>, IComparable
     {
+        public int CompareTo(object b)
+        {
+            return (int)(this - (Time)b);
+        }
         public double AsDouble()
         {
             return this[2] == 0 ? 0 : (double)this[0] + ((double)this[1] / (double)this[2]);
@@ -165,16 +164,10 @@ namespace Phigodot.ChartStructure
 
     public class RPESpeedEvent
     {
-        public int EasingType { get; set; }
         [JsonPropertyName("end")]
         public float End { get; set; }
         [JsonPropertyName("endTime")]
         public Time EndTime { get; set; }
-
-
-        // Include extended time after event.
-        [JsonIgnore]
-        public double RealEndTime { get; set; }
 
         [JsonPropertyName("linkgroup")]
         public int LinkGroup { get; set; }
@@ -186,36 +179,27 @@ namespace Phigodot.ChartStructure
         [JsonIgnore]
         public double floorPosition = 0;
 
-        /// <summary>
-        /// 计算速度事件从startTime到endTime的积分
-        /// </summary>
-        /// <param name="startTime">开始时间,单位为秒。</param>
-        /// <param name="endTime">结束时间,单位为秒,不能大于下一个事件开始时间</param>
-        /// <returns></returns>
-        public double Integral(double startTime, double endTime)
-        {
-            if (endTime <= StartTime.RealTime || startTime >= RealEndTime) return 0;// Beyond range.
-
-            double result = 0.0d;
-            double inEventEndTime = Math.Min(EndTime.RealTime, endTime);
-            double inEventStartTime = Math.Max(StartTime.RealTime, startTime);
-            double avgVal = ValAt((inEventStartTime + inEventEndTime) / 2);
-            result += avgVal * (inEventEndTime - inEventStartTime);
-
-            if (endTime >= EndTime.RealTime) result += End * (Math.Min(endTime, RealEndTime) - Math.Max(startTime, this.EndTime.RealTime));
-            return result;
-        }
-
-        public double ValAt(double time)
-        {
-            double ratio = (time - StartTime.RealTime) / (EndTime.RealTime - StartTime.RealTime);
-            return (End * ratio) + (Start * (1 - ratio));
-        }
-
     }
 
     public class EventList : List<RPEEvent>
     {
+        public EventList() { }
+        public EventList(bool WithBase = false)
+        {
+            if (WithBase)
+            {
+                Add(new RPEEvent()
+                {
+                    EasingType = 1,
+                    StartTime = new Time() { 0, 0, 1 },
+                    EndTime = new Time() { 1, 0, 1 },
+                    Start = 0,
+                    End = 0
+                });
+            }
+        }
+        [JsonIgnore]
+        public int CurAt { get; set; } = -1;
         /// <summary>
         /// 计算拍数对应的事件值
         /// </summary>
@@ -223,6 +207,7 @@ namespace Phigodot.ChartStructure
         /// <returns></returns>
         public double GetValByTime(double time)
         {
+
             foreach (RPEEvent e in this)
             {
                 var i = this.IndexOf(e);
@@ -240,21 +225,21 @@ namespace Phigodot.ChartStructure
 
     public class SpeedEventList : List<RPESpeedEvent>
     {
-        /// <summary>
-        /// 获取一段时间内速度积分
-        /// </summary>
-        /// <param name="startTime">开始时间(单位为秒)</param>
-        /// <param name="endTime">结束时间(单位为秒)</param>
-        public double Integral(double startTime, double endTime)
-        {
-            double result = 0.0d;
-            foreach (var e in this)
-            {
-                result += e.Integral(startTime, endTime);
-            }
-            return result;
-        }
 
+        public SpeedEventList() { }
+        public SpeedEventList(bool WithBase = false)
+        {
+            if (WithBase)
+            {
+                Add(new RPESpeedEvent()
+                {
+                    StartTime = new Time() { 0, 0, 1 },
+                    EndTime = new Time() { 1, 0, 1 },
+                    Start = 0,
+                    End = 0
+                });
+            }
+        }
         public void CalcFloorPosition()
         {
             foreach (RPESpeedEvent lastEvent in this)
@@ -365,14 +350,25 @@ namespace Phigodot.ChartStructure
             get { return _speedEvents; }
             set { _speedEvents = value; }
         }
-
-        //<summary>
-        //1:moveX 2:moveY 3:rotation 4:alpha 5:speed
-        //</summary>
-
-
-
-
+    }
+    public class EventLayerList : List<EventLayer>
+    {
+        /// <summary>
+		/// 获取时间范围内速度积分
+		/// </summary>
+		/// <param name="startTime"></param>
+		/// <param name="time"></param>
+		/// <param name="factor"></param>
+		/// <returns>单位：屏幕高度</returns>
+		public float GetCurSu(double time)
+        {
+            double result = 0;
+            foreach (var Layer in this)
+            {
+                result += Layer.SpeedEvents.GetCurTimeSu(time);
+            }
+            return (float)result;
+        }
     }
 
 
@@ -380,12 +376,14 @@ namespace Phigodot.ChartStructure
     {
         public Extended()
         {
-            RPEEvent defaultInc = new RPEEvent();
-            defaultInc.Start = 0.0f;
-            defaultInc.End = 0.0f;
-            defaultInc.EasingType = 1;
-            defaultInc.StartTime = new Time { 0, 0, 1 };
-            defaultInc.EndTime = new Time { 1, 0, 1 };
+            RPEEvent defaultInc = new RPEEvent
+            {
+                Start = 0.0f,
+                End = 0.0f,
+                EasingType = 1,
+                StartTime = new Time { 0, 0, 1 },
+                EndTime = new Time { 1, 0, 1 }
+            };
             inclineEvents = new EventList
             {
                 defaultInc
@@ -449,6 +447,16 @@ namespace Phigodot.ChartStructure
 
         [JsonIgnore]
         public double FloorPosition;
+        [JsonIgnore]
+        public double CeliPosition;
+        [JsonIgnore]
+        public bool IsHighLight;
+    }
+    public enum JudgeState{
+        NotJudged,
+        PreJudge,
+        Judging,
+        Judged
     }
 
     public class PosControlItem
@@ -522,7 +530,7 @@ namespace Phigodot.ChartStructure
         [JsonPropertyName("bpmfactor")]
         public float BPMFactor { get; set; }
         [JsonPropertyName("eventLayers")]
-        public List<EventLayer> EventLayers { get; set; }
+        public EventLayerList EventLayers { get; set; }
         [JsonPropertyName("extended")]
         public Extended Extended { get; set; }
         [JsonPropertyName("father")]
@@ -554,9 +562,10 @@ namespace Phigodot.ChartStructure
     }
     public enum JudgeType
     {
-        perfect,
-        good,
-        miss
+        Perfect,
+        Good,
+        Bad,
+        Miss
     }
 
 
@@ -567,36 +576,41 @@ namespace Phigodot.ChartStructure
         public int GoodCount = 0;
         public int MissCount = 0;
         public int NoteSum = 0;
-        public JudgeType judgeStatus = JudgeType.perfect;
+        public JudgeType judgeStatus = JudgeType.Perfect;
 
         public void Judge(JudgeType type)
         {
             switch (type)
             {
-                case JudgeType.perfect:
+                case JudgeType.Perfect:
                     PerfectCount += 1;
                     MaxCombo += 1;
                     break;
-                case JudgeType.good:
+                case JudgeType.Good:
                     GoodCount += 1;
                     MaxCombo += 1;
-                    if (judgeStatus == JudgeType.perfect) judgeStatus = JudgeType.good;
+                    if (judgeStatus == JudgeType.Perfect) judgeStatus = JudgeType.Good;
                     break;
-                case JudgeType.miss:
+                case JudgeType.Miss:
                     MissCount += 1;
                     MaxCombo = 0;
-                    judgeStatus = JudgeType.miss;
+                    judgeStatus = JudgeType.Miss;
                     break;
             }
+        }
+
+        public double GetAcc()
+        {
+            return (0.65d * GoodCount + PerfectCount) / NoteSum;
         }
 
         public int CalcScore()
         {
             return (int)
                     (
-                    100000f*((float)MaxCombo/(float)NoteSum)
-                    + 900000f*((float)PerfectCount/(float)NoteSum)
-                    + 0.75f*900000f*((float)GoodCount/(float)NoteSum)
+                    1000000 *
+                    ((0.1d * MaxCombo / NoteSum) +
+                    0.9d * GetAcc())
                     );
         }
         public void RevertJudge()
@@ -605,17 +619,17 @@ namespace Phigodot.ChartStructure
             PerfectCount = 0;
             GoodCount = 0;
             MissCount = 0;
-            judgeStatus = JudgeType.perfect;
+            judgeStatus = JudgeType.Perfect;
         }
     }
 
 
     public class ChartRPE
     {
-        public static Godot.Vector2 RPEPos2PixelPos(Godot.Vector2 RPEPos, Godot.Vector2 StagePixelSize)
+        public static Vector2 RPEPos2PixelPos(Vector2 RPEPos, Vector2 StagePixelSize)
         {
             RPEPos.X *= StagePixelSize.X / 1350.0f;
-            RPEPos.Y *= StagePixelSize.Y / 900.0f;
+            RPEPos.Y *= -StagePixelSize.Y / 900.0f;
             return RPEPos;
         }
 
@@ -637,56 +651,32 @@ namespace Phigodot.ChartStructure
         /// </summary>
         public void PreCalculation()
         {
+
+            var allNotes = new List<RPENote>();
             foreach (var line in JudgeLineList)
             {
                 JudgeData.NoteSum += line.NumOfNotes;
-
                 // RealTime Calculate.
                 foreach (var note in line.Notes.OrEmptyIfNull())
                 {
                     note.StartTime.RealTime = BeatTime2RealTime(note.StartTime);
                     note.EndTime.RealTime = BeatTime2RealTime(note.EndTime);
+                    allNotes.Add(note);
                 }
-
-
                 foreach (var layer in line.EventLayers.OrEmptyIfNull())
                 {
+                    layer.SpeedEvents ??= new SpeedEventList(true);
+                    layer.MoveXEvents ??= new EventList(WithBase: true);
+                    layer.MoveYEvents ??= new EventList(WithBase: true);
+                    layer.MoveYEvents ??= new EventList(WithBase: true);
+                    layer.AlphaEvents ??= new EventList(WithBase: true);
+                    layer.RotateEvents ??= new EventList(WithBase: true);
 
-                    // Not necessary.
-
-                    // foreach(var e in layer.moveXEvents){
-                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
-                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
-                    // }
-                    // foreach(var e in layer.moveYEvents){
-                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
-                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
-                    // }
-                    // foreach(var e in layer.rotateEvents){
-                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
-                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
-                    // }
-                    // foreach(var e in layer.alphaEvents){
-                    //     e.startTime.RealTime = BeatTime2RealTime(BPMList,e.startTime);
-                    //     e.endTime.RealTime   = BeatTime2RealTime(BPMList,e.endTime);
-                    // }
-                    if (layer.SpeedEvents == null) continue;
                     foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
                     {
                         e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
                         e.EndTime.RealTime = BeatTime2RealTime(e.EndTime);
                     }
-                    foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
-                    {
-
-                        // Real end time calculate.
-                        var list = layer.SpeedEvents;
-                        int i = list.IndexOf(e);
-                        if (i == list.Count - 1) continue; // Skip last event.
-                        e.RealEndTime = list[i + 1].StartTime.RealTime; // Collapse situration NOT considered.
-                    }
-                    layer.SpeedEvents[layer.SpeedEvents.Count - 1].RealEndTime = 99999.0d; // May have better solution.
-
                     layer.SpeedEvents.CalcFloorPosition();
                 }
 
@@ -695,7 +685,23 @@ namespace Phigodot.ChartStructure
                     foreach (var layer in line.EventLayers)
                     {
                         note.FloorPosition += layer.SpeedEvents.GetCurTimeSu(note.StartTime.RealTime);
+                        note.CeliPosition += layer.SpeedEvents.GetCurTimeSu(note.EndTime.RealTime);
                     }
+                }
+            }
+            allNotes.Sort(new NoteStartTimeComparer());
+            foreach (var curNote in allNotes)
+            {
+
+                var i = allNotes.IndexOf(curNote);
+                if
+                (
+                    (i < allNotes.Count - 1 && Math.Abs(allNotes[i + 1].StartTime - curNote.StartTime) <= 0.01)
+                    ||
+                    (i > 0 && Math.Abs(allNotes[i - 1].StartTime - curNote.StartTime) <= 0.01)
+                )
+                {
+                    curNote.IsHighLight = true;
                 }
             }
         }

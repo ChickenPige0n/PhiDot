@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Phigodot.ChartStructure
+namespace Phidot.ChartStructure
 {
     internal class Easings
     {
@@ -12,10 +8,10 @@ namespace Phigodot.ChartStructure
         const double c1 = 1.70158;
         const double c2 = c1 * 1.525;
         const double c3 = c1 + 1;
-        const double c4 = (2 * Math.PI) / 3;
+        const double c4 = 2 * Math.PI / 3;
         const double n1 = 7.5625;
         const double d1 = 2.75;
-        const double c5 = (2 * Math.PI) / 4.5;
+        const double c5 = 2 * Math.PI / 4.5;
 
 
         //1
@@ -174,7 +170,7 @@ namespace Phigodot.ChartStructure
             {
                 return n1 * (x -= 2.625 / d1) * x + 0.984375;
             }
-            
+
         }
         //27
         public static double EaseInBounce(double x)
@@ -184,7 +180,7 @@ namespace Phigodot.ChartStructure
         //28
         public static double EaseInOutBounce(double x)
         {
-            return x< 0.5
+            return x < 0.5
               ? (1 - EaseOutBounce(1 - 2 * x)) / 2
               : (1 + EaseOutBounce(2 * x - 1)) / 2;
         }
