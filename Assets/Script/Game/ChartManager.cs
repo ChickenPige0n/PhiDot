@@ -247,6 +247,7 @@ namespace Phidot.Game
 
 				foreach (JudgeLineNode line in JudgeLineInstances)
 				{
+					line.chartJudgeState = Chart.JudgeData.chartJudgeType;
 					line.CalcTime(Time);
 				}
 
@@ -376,9 +377,14 @@ namespace Phidot.Game
 				else if (selectedGroup.dt < GOOD_RANGE) judgement = JudgeType.Good;
 				else judgement = JudgeType.Bad;
 
-
-				selectedGroup.note.EmitOnJudged(judgement, selectedGroup.note.NoteInfo.Type, true);
-				selectedGroup.note.State = selectedGroup.note.NoteInfo.Type == NoteType.Hold ? JudgeState.Holding : JudgeState.Judged;
+				selectedGroup.note.NoteJudgeType = judgement;
+				selectedGroup.note.EmitOnJudged(selectedGroup.note.NoteJudgeType, selectedGroup.note.NoteInfo.Type, true);
+				if (selectedGroup.note.NoteInfo.Type == NoteType.Hold){
+					selectedGroup.note.State = JudgeState.Holding;
+					return;
+				}
+				selectedGroup.note.State = JudgeState.Judged;
+				selectedGroup.note.Visible = false;
 			}
 			else if (@event is InputEventScreenDrag)
 			{
@@ -390,8 +396,8 @@ namespace Phidot.Game
 		#endregion
 
 		#region HitEffect
-		public Color PerfectColor = new(0xecebb0e7);
-		public Color GoodColor = new(0xb4e1ffeb);
+		public static Color PerfectColor = new(0xecebb0e7);
+		public static Color GoodColor = new(0xb4e1ffeb);
 		public void JudgedEventHandler(Vector2 globalPosition, JudgeType judgeType, NoteType noteType, bool shouldSoundAndRecord = true)
 		{
 			if (shouldSoundAndRecord)
@@ -400,6 +406,8 @@ namespace Phidot.Game
 			}
 			Combo = Chart.JudgeData.MaxCombo;
 			Score = Chart.JudgeData.CalcScore();
+			
+			if (judgeType == JudgeType.Miss) return;
 
 			AnimatedSprite2D effectInstance = HEScene.Instantiate<AnimatedSprite2D>();
 			Color color = PerfectColor;
@@ -415,7 +423,7 @@ namespace Phidot.Game
 					break;
 			}
 
-			if (shouldSoundAndRecord && judgeType != JudgeType.Miss)
+			if (shouldSoundAndRecord)
 			{
 				switch (noteType)
 				{

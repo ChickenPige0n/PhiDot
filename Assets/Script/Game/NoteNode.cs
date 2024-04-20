@@ -10,6 +10,7 @@ namespace Phidot.Game
 		public event OnJudjedEventHandler OnJudged;
 
 		public void EmitOnJudged(JudgeType judgeType, NoteType noteType, bool shouldSound = true){
+			if (NoteInfo.IsFake == 1) return;
 			var x = Position.X;
 			var parent = GetParent<JudgeLineNode>();
 			var pos = new Vector2(

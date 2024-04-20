@@ -6,6 +6,7 @@ using System;
 using YamlDotNet.Core.Tokens;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 
 namespace Phidot.Game
@@ -13,7 +14,7 @@ namespace Phidot.Game
 	public partial class JudgeLineNode : Sprite2D
 	{
 		public const double HOLD_MISS_TIME = 0.05;
-
+		public JudgeType chartJudgeState;
 
 
 		// Called when the node enters the scene tree for the first time.
@@ -89,6 +90,18 @@ namespace Phidot.Game
 			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, (float)yPos), StageSize) + (StageSize / 2);
 			RotationDegrees = (float)rotate;
 			var m = SelfModulate;
+			switch (chartJudgeState)
+			{
+				case JudgeType.Perfect:
+					m = ChartManager.PerfectColor;
+					break;
+				case JudgeType.Good:
+					m = ChartManager.GoodColor;
+					break;
+				default:
+					m = new(1, 1, 1, 1);
+					break;
+			}
 			TextureLine.SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
 
@@ -102,9 +115,16 @@ namespace Phidot.Game
 				if (chartTime > note.EndTime)
 				{
 					instance.Visible = false;
-					if (instance.NoteJudgeType == JudgeType.Perfect && instance.State == JudgeState.Judged && instance.NoteInfo.Type >= NoteType.Flick){
+					if (instance.NoteJudgeType == JudgeType.Perfect && instance.State == JudgeState.Judged && instance.NoteInfo.Type >= NoteType.Flick)
+					{
 						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
 						instance.State = JudgeState.Dead;
+					}
+					else if (instance.State == JudgeState.NotJudged && realTime - note.StartTime.RealTime >= ChartManager.BAD_RANGE)
+					{
+						instance.NoteJudgeType = JudgeType.Miss;
+						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+						instance.State = JudgeState.Judged;
 					}
 					continue;
 				}
@@ -117,7 +137,7 @@ namespace Phidot.Game
 					if (chartTime >= note.StartTime && chartTime <= note.EndTime && instance.State == JudgeState.Holding)
 					{
 						instance.UntouchTimer += GetProcessDeltaTime();
-						
+
 						GD.Print($"Type: {instance.UntouchTimer}");
 
 						if (instance.UntouchTimer > HOLD_MISS_TIME)

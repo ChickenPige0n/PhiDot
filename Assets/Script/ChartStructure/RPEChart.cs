@@ -576,7 +576,7 @@ namespace Phidot.ChartStructure
         public int GoodCount = 0;
         public int MissCount = 0;
         public int NoteSum = 0;
-        public JudgeType judgeStatus = JudgeType.Perfect;
+        public JudgeType chartJudgeType = JudgeType.Perfect;
 
         public void Judge(JudgeType type)
         {
@@ -589,12 +589,12 @@ namespace Phidot.ChartStructure
                 case JudgeType.Good:
                     GoodCount += 1;
                     MaxCombo += 1;
-                    if (judgeStatus == JudgeType.Perfect) judgeStatus = JudgeType.Good;
+                    if (chartJudgeType == JudgeType.Perfect) chartJudgeType = JudgeType.Good;
                     break;
                 case JudgeType.Miss:
                     MissCount += 1;
                     MaxCombo = 0;
-                    judgeStatus = JudgeType.Miss;
+                    chartJudgeType = JudgeType.Miss;
                     break;
             }
         }
@@ -619,7 +619,7 @@ namespace Phidot.ChartStructure
             PerfectCount = 0;
             GoodCount = 0;
             MissCount = 0;
-            judgeStatus = JudgeType.Perfect;
+            chartJudgeType = JudgeType.Perfect;
         }
     }
 
