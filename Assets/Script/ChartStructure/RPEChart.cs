@@ -454,9 +454,9 @@ namespace Phidot.ChartStructure
     }
     public enum JudgeState{
         NotJudged,
-        PreJudge,
-        Judging,
-        Judged
+        Holding,
+        Judged,
+        Dead
     }
 
     public class PosControlItem

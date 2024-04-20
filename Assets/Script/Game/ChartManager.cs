@@ -6,11 +6,14 @@ using Phidot.ChartStructure;
 using Color = Godot.Color;
 using System.Linq;
 using System.Diagnostics;
+using System;
 
 namespace Phidot.Game
 {
 	public partial class ChartManager : Control
 	{
+		public bool isAutoPlay = false;
+
 		private ResPackManager resPackManager;
 
 		public ChartRPE Chart;
@@ -66,6 +69,68 @@ namespace Phidot.Game
 
 		public bool isPlaying = false;
 
+		#region LoadChart
+		// Called when the node enters the scene tree for the first time.
+		public void LoadFromDir(string dir)
+		{
+			Vector2 newSize = DisplayServer.WindowGetSize();
+			StageSize = new Vector2I((int)((double)newSize.Y * AspectRatio), (int)newSize.Y);
+
+
+			GameModeLabel.Text = isAutoPlay ? "AUTOPLAY" : "COMBO";
+			var absPath = ProjectSettings.GlobalizePath(dir);
+
+			LoadChart(absPath);
+
+			resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
+			var curPack = resPackManager.CurPack;
+			var HEInstance = HEScene.Instantiate<AnimatedSprite2D>();
+			HEInstance.SpriteFrames = curPack.HitEffectFrames;
+
+			var Scene = new PackedScene();
+			Scene.Pack(HEInstance);
+			HEScene = Scene;
+
+			CalcUISize();
+			PlayChart();
+		}
+		public void LoadChart(string RootDir)
+		{
+			string infoPath = Path.Combine(RootDir, "info.txt");
+			string infoContent = File.ReadAllText(infoPath);
+			chartData = ChartData.FromString(RootDir, infoContent);
+			// TODO: Read from JSON META
+			BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(chartData.ImageSource);
+			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir, chartData.MusicFileName));
+			SongNameLabel.Text = chartData.ChartName;
+			DiffLabel.Text = chartData.ChartDiff;
+
+			string jsonText = File.ReadAllText(Path.Combine(RootDir, chartData.ChartFileName));
+			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
+			GD.Print(Chart.JudgeLineList.Count);
+			// Must done as initialization
+			Chart.PreCalculation();
+			foreach (var Line in Chart.JudgeLineList)
+			{
+				int i = Chart.JudgeLineList.IndexOf(Line);
+				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
+				LineInstance.fingerDatas = fingerDatas;
+				AddChild(LineInstance);
+				LineInstance.Init(Chart, i);
+				LineInstance.ZIndex = Chart.JudgeLineList[i].ZOrder;
+				LineInstance.AspectRatio = this.AspectRatio;
+				JudgeLineInstances.Add(LineInstance);
+
+				foreach (NoteNode note in LineInstance.noteInstances)
+				{
+					note.OnJudged += JudgedEventHandler;
+				}
+			}
+		}
+		#endregion
+
+		#region ChartControl
+
 		public void Pause()
 		{
 			isPlaying = !isPlaying;
@@ -90,16 +155,17 @@ namespace Phidot.Game
 			{
 				foreach (var noteNode in line.noteInstances)
 				{
-					if (noteNode.Touched && RealTime <= noteNode.NoteInfo.StartTime.RealTime)
+					if (noteNode.State != JudgeState.NotJudged && RealTime <= noteNode.NoteInfo.StartTime.RealTime)
 					{
 						if (RealTime <= Time) Chart.JudgeData.RevertJudge();
-						noteNode.Touched = false;
+						noteNode.State = JudgeState.NotJudged;
 						noteNode.Visible = true;
 						noteNode.Head.Visible = true;
 						if (noteNode.NoteInfo.Type == NoteType.Hold)
 						{
 							noteNode.Body.Visible = true;
 							noteNode.Tail.Visible = true;
+							noteNode.Modulate = new Color(1, 1, 1, 1);
 						}
 					}
 				}
@@ -128,100 +194,9 @@ namespace Phidot.Game
 			QueueFree();
 		}
 
+		#endregion
 
-
-		public void LoadChart(string RootDir)
-		{
-			string infoPath = Path.Combine(RootDir, "info.txt");
-			string infoContent = File.ReadAllText(infoPath);
-			chartData = ChartData.FromString(RootDir, infoContent);
-			// TODO: Read from JSON META
-			BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(chartData.ImageSource);
-			Music.Stream = (AudioStream)GD.Load(Path.Combine(RootDir, chartData.MusicFileName));
-			SongNameLabel.Text = chartData.ChartName;
-			DiffLabel.Text = chartData.ChartDiff;
-
-			string jsonText = File.ReadAllText(Path.Combine(RootDir, chartData.ChartFileName));
-			Chart = JsonConvert.DeserializeObject<ChartRPE>(jsonText);
-			GD.Print(Chart.JudgeLineList.Count);
-			// Must done as initialization
-			Chart.PreCalculation();
-			foreach (var Line in Chart.JudgeLineList)
-			{
-				int i = Chart.JudgeLineList.IndexOf(Line);
-				var LineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
-				AddChild(LineInstance);
-				LineInstance.Init(Chart, i);
-				LineInstance.ZIndex = Chart.JudgeLineList[i].ZOrder;
-				LineInstance.AspectRatio = this.AspectRatio;
-				JudgeLineInstances.Add(LineInstance);
-
-				foreach (NoteNode note in LineInstance.noteInstances)
-				{
-					note.OnJudjed += JudgedEventHandler;
-				}
-			}
-		}
-
-
-
-		public Color PerfectColor = new(0xecebb0e7);
-		public Color GoodColor = new(0xb4e1ffeb);
-		public void JudgedEventHandler(Vector2 globalPosition, int judgeIntType, int noteIntType, bool shouldSound = true)
-		{
-			var judgeType = (JudgeType)judgeIntType;
-			var noteType = (NoteType)noteIntType;
-
-			if (shouldSound)
-			{
-				Chart.JudgeData.Judge(judgeType);
-			}
-			Combo = Chart.JudgeData.MaxCombo;
-			Score = Chart.JudgeData.CalcScore();
-
-			AnimatedSprite2D effectInstance = HEScene.Instantiate<AnimatedSprite2D>();
-			Color color = PerfectColor;
-			switch (judgeType)
-			{
-				case JudgeType.Perfect:
-					color = PerfectColor;
-					break;
-				case JudgeType.Good:
-					color = GoodColor;
-					break;
-				default:
-					break;
-			}
-
-			if (shouldSound)
-			{
-				switch (noteType)
-				{
-					case NoteType.Tap:
-						TapSFX.Play();
-						break;
-					case NoteType.Hold:
-						TapSFX.Play();
-						break;
-					case NoteType.Flick:
-						FlickSFX.Play();
-						break;
-					case NoteType.Drag:
-						DragSFX.Play();
-						break;
-				}
-			}
-			effectInstance.Modulate = color;
-
-
-			var curPack = resPackManager.CurPack;
-			var Scale = 1.5f * curPack.HitFxScale * (StageSize.X * 175 / (1350 * effectInstance.SpriteFrames.GetFrameTexture("default", 0).GetSize().X));
-			effectInstance.Scale = Vector2.One * Scale;
-
-			effectInstance.Position = globalPosition - (WindowSize - StageSize) / 2;
-			AddChild(effectInstance);
-		}
-
+		#region StartChart
 		public void PlayChart()
 		{
 			LabelUI.Size = StageSize + Vector2.One * 400;
@@ -248,35 +223,16 @@ namespace Phidot.Game
 			})).SetDelay(1.0f);
 			tween.Play();
 		}
-
-		// Called when the node enters the scene tree for the first time.
-		public void LoadFromDir(string dir)
-		{
-			Vector2 newSize = DisplayServer.WindowGetSize();
-			StageSize = new Vector2I((int)((double)newSize.Y * AspectRatio), (int)newSize.Y);
+		#endregion
 
 
-			GameModeLabel.Text = "Autoplay";
-			var absPath = ProjectSettings.GlobalizePath(dir);
-			LoadChart(absPath);
 
-			resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
-			var curPack = resPackManager.CurPack;
-			var HEInstance = HEScene.Instantiate<AnimatedSprite2D>();
-			HEInstance.SpriteFrames = curPack.HitEffectFrames;
 
-			var Scene = new PackedScene();
-			Scene.Pack(HEInstance);
-			HEScene = Scene;
-
-			CalcUISize();
-			PlayChart();
-		}
 		public override void _Ready()
 		{
 			base._Ready();
 		}
-		// Called every frame. 'delta' is the elapsed time since the previous frame.
+		#region Tick
 		public override void _Process(double delta)
 		{
 			CalcUISize();
@@ -294,8 +250,6 @@ namespace Phidot.Game
 					line.CalcTime(Time);
 				}
 
-				#region UI Calculate
-
 				ComboLabel.Text = Combo.ToString();
 				ScoreLabel.Text = Score.ToString("D7");
 
@@ -310,61 +264,25 @@ namespace Phidot.Game
 					ComboLabel.Visible = false;
 				}
 
-				#endregion
 			}
 
-			#region PlayerInput
-			if (Input.IsActionJustPressed("seekforward"))
-			{
-				SeekTo(Time + 5);
-			}
-			if (Input.IsActionJustPressed("seekback"))
-			{
-				SeekTo(Time - 5);
-			}
-			#endregion
-		}
 
-		public const double GOOD_RANGE = 0.16;
-		public const double PERFECT_RANGE = 0.08;
-		public override void _Input(InputEvent @event)
-		{
-			base._Input(@event);
-			if (@event is InputEventScreenTouch)
+			// Time Control
+			if (isAutoPlay)
 			{
-				var touch = @event as InputEventScreenTouch;
-				if (!touch.Pressed) return;
-				List<(NoteNode note, float dx, double dt)> groups = new();
-				foreach (var line in JudgeLineInstances)
+				if (Input.IsActionJustPressed("seekforward"))
 				{
-					var lineClosest = line.HandleTouch(touch.Position, Time);
-
-					if (lineClosest.HasValue) groups.Add(lineClosest.Value);
+					SeekTo(Time + 5);
 				}
-				if (groups.Count == 0) return;
-
-				(NoteNode note, float dx, double dt) selectedGroup = groups[0];
-				// argmin(dx)
-				foreach (var group in groups)
+				if (Input.IsActionJustPressed("seekback"))
 				{
-					if (group.dx < selectedGroup.dx)
-					{
-						selectedGroup = group;
-					}
+					SeekTo(Time - 5);
 				}
-
-				GD.Print(selectedGroup.dx);
-                JudgeType judgement;
-                if (selectedGroup.dt < PERFECT_RANGE) judgement = JudgeType.Perfect;
-				else if(selectedGroup.dt < GOOD_RANGE) judgement = JudgeType.Good;
-				else judgement = JudgeType.Bad;
-				selectedGroup.note.EmitSignal(NoteNode.SignalName.OnJudjed, selectedGroup.note.GlobalPosition, (int)judgement, (int)selectedGroup.note.NoteInfo.Type, true);
-				selectedGroup.note.Touched = true;
 			}
 		}
+		#endregion
 
-
-
+		#region UISizing
 		public void CalcUISize()
 		{
 
@@ -392,15 +310,140 @@ namespace Phidot.Game
 				LabelUI.Size = StageSize;
 			}
 			var Ratio = StageSize.Y / 648;
-			ScoreLabel.LabelSettings.FontSize    = (int)(30 * Ratio);
-			ComboLabel.LabelSettings.FontSize    = (int)(40 * Ratio);
+			ScoreLabel.LabelSettings.FontSize = (int)(30 * Ratio);
+			ComboLabel.LabelSettings.FontSize = (int)(40 * Ratio);
 			GameModeLabel.LabelSettings.FontSize = (int)(20 * Ratio);
 			PauseBtn.CustomMinimumSize = Vector2.One * 25 * Ratio;
-			LabelUI.AddThemeConstantOverride("margin_top",    (int)(25 * Ratio));
-			LabelUI.AddThemeConstantOverride("margin_right",  (int)(25 * Ratio));
-			LabelUI.AddThemeConstantOverride("margin_left",   (int)(25 * Ratio));
+			LabelUI.AddThemeConstantOverride("margin_top", (int)(25 * Ratio));
+			LabelUI.AddThemeConstantOverride("margin_right", (int)(25 * Ratio));
+			LabelUI.AddThemeConstantOverride("margin_left", (int)(25 * Ratio));
 			LabelUI.AddThemeConstantOverride("margin_bottom", (int)(25 * Ratio));
-			ComboUI.AddThemeConstantOverride("margin_top",    (int)(15 * Ratio));
+			ComboUI.AddThemeConstantOverride("margin_top", (int)(15 * Ratio));
 		}
+		#endregion
+
+		#region Judge
+		public const double BAD_RANGE = 0.22;
+		public const double GOOD_RANGE = 0.16;
+		public const double PERFECT_RANGE = 0.08;
+
+		public List<FingerData> fingerDatas = new();
+		public class FingerData
+		{
+			public Vector2 curPos;
+			public Vector2 curVec;
+
+			public FingerData(Vector2 Pos = new Vector2(), Vector2 Vec = new Vector2())
+			{
+				curPos = Pos;
+				curVec = Vec;
+			}
+		}
+		public override void _Input(InputEvent @event)
+		{
+			base._Input(@event);
+			if (@event is InputEventScreenTouch)
+			{
+				var touch = @event as InputEventScreenTouch;
+				if (!touch.Pressed && fingerDatas.Count > touch.Index)
+				{
+					fingerDatas.RemoveAt(touch.Index);
+					return;
+				}
+				fingerDatas.Add(new FingerData(touch.Position));
+
+				List<(NoteNode note, float dx, double dt)> groups = new();
+				foreach (var line in JudgeLineInstances)
+				{
+					var lineClosest = line.HandleClick(touch.Position, Time);
+
+					if (lineClosest.HasValue) groups.Add(lineClosest.Value);
+				}
+				if (groups.Count == 0) return;
+
+				(NoteNode note, float dx, double dt) selectedGroup = groups[0];
+				// argmin(dx)
+				foreach (var group in groups)
+				{
+					if (group.dx < selectedGroup.dx)
+					{
+						selectedGroup = group;
+					}
+				}
+
+				JudgeType judgement;
+				if (selectedGroup.dt < PERFECT_RANGE) judgement = JudgeType.Perfect;
+				else if (selectedGroup.dt < GOOD_RANGE) judgement = JudgeType.Good;
+				else judgement = JudgeType.Bad;
+
+
+				selectedGroup.note.EmitOnJudged(judgement, selectedGroup.note.NoteInfo.Type, true);
+				selectedGroup.note.State = selectedGroup.note.NoteInfo.Type == NoteType.Hold ? JudgeState.Holding : JudgeState.Judged;
+			}
+			else if (@event is InputEventScreenDrag)
+			{
+				var dragEvent = @event as InputEventScreenDrag;
+				fingerDatas[dragEvent.Index].curPos += dragEvent.Relative;
+				fingerDatas[dragEvent.Index].curVec = dragEvent.Velocity;
+			}
+		}
+		#endregion
+
+		#region HitEffect
+		public Color PerfectColor = new(0xecebb0e7);
+		public Color GoodColor = new(0xb4e1ffeb);
+		public void JudgedEventHandler(Vector2 globalPosition, JudgeType judgeType, NoteType noteType, bool shouldSoundAndRecord = true)
+		{
+			if (shouldSoundAndRecord)
+			{
+				Chart.JudgeData.Judge(judgeType);
+			}
+			Combo = Chart.JudgeData.MaxCombo;
+			Score = Chart.JudgeData.CalcScore();
+
+			AnimatedSprite2D effectInstance = HEScene.Instantiate<AnimatedSprite2D>();
+			Color color = PerfectColor;
+			switch (judgeType)
+			{
+				case JudgeType.Perfect:
+					color = PerfectColor;
+					break;
+				case JudgeType.Good:
+					color = GoodColor;
+					break;
+				default:
+					break;
+			}
+
+			if (shouldSoundAndRecord && judgeType != JudgeType.Miss)
+			{
+				switch (noteType)
+				{
+					case NoteType.Tap:
+						TapSFX.Play();
+						break;
+					case NoteType.Hold:
+						TapSFX.Play();
+						break;
+					case NoteType.Flick:
+						FlickSFX.Play();
+						break;
+					case NoteType.Drag:
+						DragSFX.Play();
+						break;
+				}
+			}
+			effectInstance.Modulate = color;
+
+
+			var curPack = resPackManager.CurPack;
+			var Scale = 1.5f * curPack.HitFxScale * (StageSize.X * 175 / (1350 * effectInstance.SpriteFrames.GetFrameTexture("default", 0).GetSize().X));
+			effectInstance.Scale = Vector2.One * Scale;
+
+			effectInstance.Position = globalPosition - (WindowSize - StageSize) / 2;
+			AddChild(effectInstance);
+		}
+		#endregion
+
 	}
 }

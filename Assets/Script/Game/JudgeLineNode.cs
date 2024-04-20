@@ -12,7 +12,7 @@ namespace Phidot.Game
 {
 	public partial class JudgeLineNode : Sprite2D
 	{
-
+		public const double HOLD_MISS_TIME = 0.05;
 
 
 
@@ -39,9 +39,10 @@ namespace Phidot.Game
 		public Vector2 WindowSize;
 		public double AspectRatio = 1.666667d;
 
-		public const double BAD_RANGE = 0.22;
+
 		public float NoteJudgeSize = 100;
-		public (NoteNode note, float dx, double dt)? HandleTouch(Vector2 pos, double realTime)
+		public List<ChartManager.FingerData> fingerDatas;
+		public (NoteNode note, float dx, double dt)? HandleClick(Vector2 pos, double realTime)
 		{
 			Idex.Visible = true;
 			pos = ((pos * GetCanvasTransform()) - this.GlobalPosition).Rotated(-Rotation);
@@ -50,10 +51,10 @@ namespace Phidot.Game
 
 			foreach (var instance in noteInstances)
 			{
-
+				if (!(instance.NoteInfo.Type == NoteType.Tap || instance.NoteInfo.Type == NoteType.Hold)) continue;
 				var dt = Math.Abs(realTime - instance.NoteInfo.StartTime.RealTime);
 				var dx = Math.Abs(instance.Position.X - pos.X);
-				if (!instance.Touched && dt < BAD_RANGE && dx < NoteJudgeSize
+				if (instance.State != JudgeState.Judged && dt < ChartManager.BAD_RANGE && dx < NoteJudgeSize
 					&& (!closest.HasValue || dx < closest.Value.dx))
 				{
 					closest = (instance, dx, dt);
@@ -90,6 +91,9 @@ namespace Phidot.Game
 			var m = SelfModulate;
 			TextureLine.SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
+
+
+
 			var noteList = Chart.JudgeLineList[LineIndex].Notes;
 			foreach (NoteNode instance in noteInstances)
 			{
@@ -98,6 +102,10 @@ namespace Phidot.Game
 				if (chartTime > note.EndTime)
 				{
 					instance.Visible = false;
+					if (instance.NoteJudgeType == JudgeType.Perfect && instance.State == JudgeState.Judged && instance.NoteInfo.Type >= NoteType.Flick){
+						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+						instance.State = JudgeState.Dead;
+					}
 					continue;
 				}
 				var EventLayerList = Chart.JudgeLineList[LineIndex].EventLayers;
@@ -106,12 +114,23 @@ namespace Phidot.Game
 				instance.Position = new Vector2(instance.Position.X, chartTime >= note.StartTime ? 0 : newY);
 				if (note.Type == NoteType.Hold)
 				{
-					if (chartTime >= note.StartTime && chartTime <= note.EndTime)
+					if (chartTime >= note.StartTime && chartTime <= note.EndTime && instance.State == JudgeState.Holding)
 					{
+						instance.UntouchTimer += GetProcessDeltaTime();
+						
+						GD.Print($"Type: {instance.UntouchTimer}");
+
+						if (instance.UntouchTimer > HOLD_MISS_TIME)
+						{
+							instance.State = JudgeState.Judged;
+							instance.NoteJudgeType = JudgeType.Miss;
+							instance.Modulate = new Color(1, 1, 1, .5f);
+							instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+						}
 						instance.HoldTimer += dChartTime;
 						if (instance.HoldTimer > 0.5f)
 						{
-							instance.EmitSignal(NoteNode.SignalName.OnJudjed, GlobalPosition, (int)JudgeType.Perfect, (int)NoteType.Hold, false);
+							instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, false);
 							instance.HoldTimer = 0;
 						}
 					}
@@ -119,10 +138,35 @@ namespace Phidot.Game
 					var end = StageSize.Y / 7.5f * note.Speed * (float)(EventLayerList.GetCurSu(realTime) - note.CeliPosition);
 					end = note.Above == 1 ? end : -end;
 
-					if (chartTime >= note.StartTime) instance.Head.Visible = false;
+					if (chartTime >= note.StartTime)
+					{
+						instance.Head.Visible = false;
+					}
 
 					instance.Body.Scale = new Vector2(instance.Body.Scale.X, (instance.Position.Y - end) / instance.Body.Texture.GetSize().Y);
 					instance.Tail.Position = new Vector2(0, end - instance.Position.Y);
+				}
+
+
+				if (instance.NoteInfo.Type == NoteType.Tap) continue;
+
+				foreach (var fingerData in fingerDatas)
+				{
+					var pos = ((fingerData.curPos * GetCanvasTransform()) - GlobalPosition).Rotated(-Rotation);
+					var dt = Math.Abs(realTime - instance.NoteInfo.StartTime.RealTime);
+					var dx = Math.Abs(instance.Position.X - pos.X);
+					if (instance.State != JudgeState.Judged && dx < NoteJudgeSize)
+					{
+						if (instance.NoteInfo.Type == NoteType.Hold)
+						{
+							instance.UntouchTimer = 0;
+							continue;
+						}
+						if (dt < ChartManager.GOOD_RANGE && (instance.NoteInfo.Type == NoteType.Drag || fingerData.curVec.Length() >= 180))
+						{
+							instance.State = JudgeState.Judged;
+						}
+					}
 				}
 			}
 

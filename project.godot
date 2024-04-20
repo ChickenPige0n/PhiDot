@@ -24,7 +24,7 @@ ResPackManager="*res://Assets/Script/ResourcePack/ResPackManager.cs"
 
 [display]
 
-window/stretch/aspect="expand"
+window/handheld/orientation=4
 
 [dotnet]
 
