@@ -9,16 +9,16 @@ using static Phidot.ChartStructure.Easings;
 namespace Phidot.ChartStructure
 {
 
-    public class BPMListItem
+    public class BpmListItem
     {
         [JsonPropertyName("bpm")]
-        public float BPM { get; set; }
+        public float Bpm { get; set; }
         [JsonPropertyName("startTime")]
         public Time StartTime { get; set; }
     }
-    public class META
+    public class Meta
     {
-        public int RPEVersion { get; set; }
+        public int RpeVersion { get; set; }
 
         [JsonPropertyName("background")]
         public string Background { get; set; }
@@ -27,7 +27,7 @@ namespace Phidot.ChartStructure
         [JsonPropertyName("composer")]
         public string Composer { get; set; }
         [JsonPropertyName("id")]
-        public string ID { get; set; }
+        public string Id { get; set; }
         [JsonPropertyName("level")]
         public string Difficulty { get; set; }
         [JsonPropertyName("name")]
@@ -52,32 +52,31 @@ namespace Phidot.ChartStructure
         [JsonPropertyName("x")]
         public float X { get; set; }
     }
-    public class RPEEvent
+    public class RpeEvent
     {
-        public RPEEvent()
+        public RpeEvent()
         {
             LinkGroup = 0;
             EasingLeft = 0;
             EasingRight = 1;
             Bezier = 0;
-            BezierPoints = new BezierPoints() { 0.0f, 0.0f, 0.0f, 0.0f };
+            BezierPoints = new BezierPoints { 0.0f, 0.0f, 0.0f, 0.0f };
         }
 
         public double GetCurVal(double t)
         {
             if (t > StartTime && t < EndTime)
             {
-                var easeResult = easeFuncs[EasingType]((t - StartTime) / (EndTime - StartTime));
+                var easeResult = EaseFuncs[EasingType]((t - StartTime) / (EndTime - StartTime));
                 return (Start * (1 - easeResult)) + (End * easeResult);
             }
-            else if (Math.Abs(t - StartTime) <= 0.01 || Math.Abs(t - EndTime) <= 0.01)
+
+            if (Math.Abs(t - StartTime) <= 0.01 || Math.Abs(t - EndTime) <= 0.01)
             {
                 return Math.Abs(t - StartTime) <= 0.01 ? Start : End;
             }
-            else
-            {
-                return End;
-            }
+
+            return End;
         }
 
         [JsonPropertyName("bezier")]
@@ -124,12 +123,12 @@ namespace Phidot.ChartStructure
         }
         public double AsDouble()
         {
-            return this[2] == 0 ? 0 : (double)this[0] + ((double)this[1] / (double)this[2]);
+            return this[2] == 0 ? 0 : this[0] + (this[1] / (double)this[2]);
         }
 
         public static implicit operator double(Time time)
         {
-            return time[2] == 0 ? 0 : (double)time[0] + ((double)time[1] / (double)time[2]);
+            return time[2] == 0 ? 0 : time[0] + (time[1] / (double)time[2]);
         }
 
         /// <summary>
@@ -150,7 +149,7 @@ namespace Phidot.ChartStructure
             denominator /= gcd;
 
 
-            return new Time() { wholePart, numerator, denominator };
+            return new Time { wholePart, numerator, denominator };
         }
         private static int GetGcd(int a, int b)
         {
@@ -162,7 +161,7 @@ namespace Phidot.ChartStructure
     }
 
 
-    public class RPESpeedEvent
+    public class RpeSpeedEvent
     {
         [JsonPropertyName("end")]
         public float End { get; set; }
@@ -177,22 +176,22 @@ namespace Phidot.ChartStructure
         public Time StartTime { get; set; }
 
         [JsonIgnore]
-        public double floorPosition = 0;
+        public double FloorPosition;
 
     }
 
-    public class EventList : List<RPEEvent>
+    public class EventList : List<RpeEvent>
     {
         public EventList() { }
-        public EventList(bool WithBase = false)
+        public EventList(bool withBase = false)
         {
-            if (WithBase)
+            if (withBase)
             {
-                Add(new RPEEvent()
+                Add(new RpeEvent
                 {
                     EasingType = 1,
-                    StartTime = new Time() { 0, 0, 1 },
-                    EndTime = new Time() { 1, 0, 1 },
+                    StartTime = new Time { 0, 0, 1 },
+                    EndTime = new Time { 1, 0, 1 },
                     Start = 0,
                     End = 0
                 });
@@ -208,10 +207,10 @@ namespace Phidot.ChartStructure
         public double GetValByTime(double time)
         {
 
-            foreach (RPEEvent e in this)
+            foreach (RpeEvent e in this)
             {
-                var i = this.IndexOf(e);
-                double nextEnd = i == this.Count - 1 ? 99999.0d : this[i + 1].StartTime;
+                var i = IndexOf(e);
+                double nextEnd = i == Count - 1 ? 99999.0d : this[i + 1].StartTime;
 
                 if (time >= e.StartTime && time <= nextEnd)
                 {
@@ -223,18 +222,18 @@ namespace Phidot.ChartStructure
     }
 
 
-    public class SpeedEventList : List<RPESpeedEvent>
+    public class SpeedEventList : List<RpeSpeedEvent>
     {
 
         public SpeedEventList() { }
-        public SpeedEventList(bool WithBase = false)
+        public SpeedEventList(bool withBase = false)
         {
-            if (WithBase)
+            if (withBase)
             {
-                Add(new RPESpeedEvent()
+                Add(new RpeSpeedEvent
                 {
-                    StartTime = new Time() { 0, 0, 1 },
-                    EndTime = new Time() { 1, 0, 1 },
+                    StartTime = new Time { 0, 0, 1 },
+                    EndTime = new Time { 1, 0, 1 },
                     Start = 0,
                     End = 0
                 });
@@ -242,9 +241,9 @@ namespace Phidot.ChartStructure
         }
         public void CalcFloorPosition()
         {
-            foreach (RPESpeedEvent lastEvent in this)
+            foreach (RpeSpeedEvent lastEvent in this)
             {
-                int i = this.IndexOf(lastEvent);
+                int i = IndexOf(lastEvent);
                 if (i == Count - 1) break;
                 var curEvent = this[i + 1];
 
@@ -254,8 +253,8 @@ namespace Phidot.ChartStructure
                 double curStartTime = curEvent.StartTime.RealTime;
 
 
-                curEvent.floorPosition +=
-                lastEvent.floorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
+                curEvent.FloorPosition +=
+                lastEvent.FloorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
                 lastEvent.End * (curStartTime - lastEndTime) / 1;
 
             }
@@ -270,29 +269,31 @@ namespace Phidot.ChartStructure
         public double GetCurTimeSu(double time)
         {
             double floorPosition = 0.0d;
-            foreach (RPESpeedEvent speedEvent in this)
+            foreach (RpeSpeedEvent speedEvent in this)
             {
-                double StartTime = speedEvent.StartTime.RealTime;
-                double EndTime = speedEvent.EndTime.RealTime;
+                double startTime = speedEvent.StartTime.RealTime;
+                double endTime = speedEvent.EndTime.RealTime;
 
                 int i = IndexOf(speedEvent);
                 if (time == speedEvent.StartTime.RealTime)
                 {
-                    floorPosition += speedEvent.floorPosition;
+                    floorPosition += speedEvent.FloorPosition;
                     break;
                 }
-                else if (time <= speedEvent.EndTime.RealTime)
+
+                if (time <= speedEvent.EndTime.RealTime)
                 {
-                    floorPosition += speedEvent.floorPosition +
-                    (speedEvent.Start + (speedEvent.End - speedEvent.Start) *
-                    (time - StartTime) / (EndTime - StartTime) +
-                    speedEvent.Start) * (time - StartTime) / 2;
+                    floorPosition += speedEvent.FloorPosition +
+                                     (speedEvent.Start + (speedEvent.End - speedEvent.Start) *
+                                      (time - startTime) / (endTime - startTime) +
+                                      speedEvent.Start) * (time - startTime) / 2;
                     break;
                 }
-                else if (Count - 1 == i || time <= this[i + 1].StartTime.RealTime)
+
+                if (Count - 1 == i || time <= this[i + 1].StartTime.RealTime)
                 {
-                    floorPosition += speedEvent.floorPosition + (speedEvent.End + speedEvent.Start) * (EndTime - StartTime) / 2 +
-                    speedEvent.End * (time - EndTime) / 1;
+                    floorPosition += speedEvent.FloorPosition + (speedEvent.End + speedEvent.Start) * (endTime - startTime) / 2 +
+                                     speedEvent.End * (time - endTime) / 1;
                     break;
                 }
             }
@@ -363,9 +364,9 @@ namespace Phidot.ChartStructure
 		public float GetCurSu(double time)
         {
             double result = 0;
-            foreach (var Layer in this)
+            foreach (var layer in this)
             {
-                result += Layer.SpeedEvents.GetCurTimeSu(time);
+                result += layer.SpeedEvents.GetCurTimeSu(time);
             }
             return (float)result;
         }
@@ -376,7 +377,7 @@ namespace Phidot.ChartStructure
     {
         public Extended()
         {
-            RPEEvent defaultInc = new RPEEvent
+            RpeEvent defaultInc = new RpeEvent
             {
                 Start = 0.0f,
                 End = 0.0f,
@@ -384,43 +385,43 @@ namespace Phidot.ChartStructure
                 StartTime = new Time { 0, 0, 1 },
                 EndTime = new Time { 1, 0, 1 }
             };
-            inclineEvents = new EventList
+            InclineEvents = new EventList
             {
                 defaultInc
             };
         }
-        public EventList inclineEvents { get; set; }
+        public EventList InclineEvents { get; set; }
     }
 
 
-    public class NoteEndTimeComparer : Comparer<RPENote>
+    public class NoteEndTimeComparer : Comparer<RpeNote>
     {
-        public override int Compare(RPENote x, RPENote y)
+        public override int Compare(RpeNote x, RpeNote y)
         {
             if (x.EndTime.RealTime > y.EndTime.RealTime) return 1;
-            else if (x.EndTime.RealTime < y.EndTime.RealTime) return -1;
-            else return 0;
+            if (x.EndTime.RealTime < y.EndTime.RealTime) return -1;
+            return 0;
         }
     }
-    public class NoteStartTimeComparer : Comparer<RPENote>
+    public class NoteStartTimeComparer : Comparer<RpeNote>
     {
-        public override int Compare(RPENote x, RPENote y)
+        public override int Compare(RpeNote x, RpeNote y)
         {
             if (x.StartTime.RealTime > y.StartTime.RealTime) return 1;
-            else if (x.StartTime.RealTime < y.StartTime.RealTime) return -1;
-            else return 0;
+            if (x.StartTime.RealTime < y.StartTime.RealTime) return -1;
+            return 0;
         }
     }
 
 
-    public enum NoteType : int
+    public enum NoteType
     {
         Tap = 1,
         Hold = 2,
         Flick = 3,
         Drag = 4,
     }
-    public class RPENote
+    public class RpeNote
     {
         [JsonPropertyName("above")]
         public int Above { get; set; }
@@ -521,14 +522,14 @@ namespace Phidot.ChartStructure
     }
     public class JudgeLineJson
     {
-        public int @Group { get; set; }
+        public int Group { get; set; }
         public string Name { get; set; }
         public string Texture { get; set; }
 
         [JsonPropertyName("alphaControl")]
         public List<AlphaControlItem> AlphaControl { get; set; }
         [JsonPropertyName("bpmfactor")]
-        public float BPMFactor { get; set; }
+        public float BpmFactor { get; set; }
         [JsonPropertyName("eventLayers")]
         public EventLayerList EventLayers { get; set; }
         [JsonPropertyName("extended")]
@@ -538,7 +539,7 @@ namespace Phidot.ChartStructure
         [JsonPropertyName("isCover")]
         public int IsCover { get; set; }
         [JsonPropertyName("notes")]
-        public List<RPENote> Notes { get; set; }
+        public List<RpeNote> Notes { get; set; }
         [JsonPropertyName("numOfNotes")]
         public int NumOfNotes { get; set; }
         [JsonPropertyName("posControl")]
@@ -553,7 +554,7 @@ namespace Phidot.ChartStructure
         public int ZOrder { get; set; }
     }
 
-    public static class IEnumerableExtended
+    public static class EnumerableExtended
     {
         public static IEnumerable<T> OrEmptyIfNull<T>(this IEnumerable<T> source)
         {
@@ -571,12 +572,12 @@ namespace Phidot.ChartStructure
 
     public class JudgeManager
     {
-        public int MaxCombo = 0;
-        public int PerfectCount = 0;
-        public int GoodCount = 0;
-        public int MissCount = 0;
-        public int NoteSum = 0;
-        public JudgeType chartJudgeType = JudgeType.Perfect;
+        public int MaxCombo;
+        public int PerfectCount;
+        public int GoodCount;
+        public int MissCount;
+        public int NoteSum;
+        public JudgeType ChartJudgeType = JudgeType.Perfect;
 
         public void Judge(JudgeType type)
         {
@@ -589,12 +590,12 @@ namespace Phidot.ChartStructure
                 case JudgeType.Good:
                     GoodCount += 1;
                     MaxCombo += 1;
-                    if (chartJudgeType == JudgeType.Perfect) chartJudgeType = JudgeType.Good;
+                    if (ChartJudgeType == JudgeType.Perfect) ChartJudgeType = JudgeType.Good;
                     break;
                 case JudgeType.Miss:
                     MissCount += 1;
                     MaxCombo = 0;
-                    chartJudgeType = JudgeType.Miss;
+                    ChartJudgeType = JudgeType.Miss;
                     break;
             }
         }
@@ -619,24 +620,24 @@ namespace Phidot.ChartStructure
             PerfectCount = 0;
             GoodCount = 0;
             MissCount = 0;
-            chartJudgeType = JudgeType.Perfect;
+            ChartJudgeType = JudgeType.Perfect;
         }
     }
 
 
-    public class ChartRPE
+    public class ChartRpe
     {
-        public static Vector2 RPEPos2PixelPos(Vector2 RPEPos, Vector2 StagePixelSize)
+        public static Vector2 RpePos2PixelPos(Vector2 rpePos, Vector2 stagePixelSize)
         {
-            RPEPos.X *= StagePixelSize.X / 1350.0f;
-            RPEPos.Y *= -StagePixelSize.Y / 900.0f;
-            return RPEPos;
+            rpePos.X *= stagePixelSize.X / 1350.0f;
+            rpePos.Y *= -stagePixelSize.Y / 900.0f;
+            return rpePos;
         }
 
 
-        public List<BPMListItem> BPMList;
+        public List<BpmListItem> BpmList;
 
-        public META META { get; set; }
+        public Meta Meta { get; set; }
         [JsonPropertyName("judgeLineGroup")]
         public List<string> JudgeLineGroup { get; set; }
         [JsonPropertyName("judgeLineList")]
@@ -652,7 +653,7 @@ namespace Phidot.ChartStructure
         public void PreCalculation()
         {
 
-            var allNotes = new List<RPENote>();
+            var allNotes = new List<RpeNote>();
             foreach (var line in JudgeLineList)
             {
                 JudgeData.NoteSum += line.NumOfNotes;
@@ -666,11 +667,11 @@ namespace Phidot.ChartStructure
                 foreach (var layer in line.EventLayers.OrEmptyIfNull())
                 {
                     layer.SpeedEvents ??= new SpeedEventList(true);
-                    layer.MoveXEvents ??= new EventList(WithBase: true);
-                    layer.MoveYEvents ??= new EventList(WithBase: true);
-                    layer.MoveYEvents ??= new EventList(WithBase: true);
-                    layer.AlphaEvents ??= new EventList(WithBase: true);
-                    layer.RotateEvents ??= new EventList(WithBase: true);
+                    layer.MoveXEvents ??= new EventList(withBase: true);
+                    layer.MoveYEvents ??= new EventList(withBase: true);
+                    layer.MoveYEvents ??= new EventList(withBase: true);
+                    layer.AlphaEvents ??= new EventList(withBase: true);
+                    layer.RotateEvents ??= new EventList(withBase: true);
 
                     foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
                     {
@@ -711,15 +712,15 @@ namespace Phidot.ChartStructure
         /// </summary>
         public double BeatTime2RealTime(double beatTime)
         {
-            var bPMList = this.BPMList;
+            var bPmList = BpmList;
             List<double> bpmSeconds = new List<double>();
-            foreach (BPMListItem BPMInfo in bPMList)
+            foreach (BpmListItem bpmInfo in bPmList)
             {
-                int i = bPMList.IndexOf(BPMInfo);
-                if (i < bPMList.Count - 1)
+                int i = bPmList.IndexOf(bpmInfo);
+                if (i < bPmList.Count - 1)
                 {
-                    double dBeat = bPMList[i + 1].StartTime - BPMInfo.StartTime;
-                    bpmSeconds.Add(dBeat * 60 / BPMInfo.BPM);
+                    double dBeat = bPmList[i + 1].StartTime - bpmInfo.StartTime;
+                    bpmSeconds.Add(dBeat * 60 / bpmInfo.Bpm);
                 }
                 else
                 {
@@ -727,21 +728,21 @@ namespace Phidot.ChartStructure
                 }
             }
 
-            double SecondSum = 0.0d;
-            foreach (BPMListItem BPMInfo in bPMList)
+            double secondSum = 0.0d;
+            foreach (BpmListItem bpmInfo in bPmList)
             {
-                int i = bPMList.IndexOf(BPMInfo);
-                if (i == bPMList.Count - 1 || bPMList[i + 1].StartTime >= beatTime)
+                int i = bPmList.IndexOf(bpmInfo);
+                if (i == bPmList.Count - 1 || bPmList[i + 1].StartTime >= beatTime)
                 {
-                    SecondSum += (beatTime - BPMInfo.StartTime) * 60 / BPMInfo.BPM;
+                    secondSum += (beatTime - bpmInfo.StartTime) * 60 / bpmInfo.Bpm;
                 }
                 else
                 {
-                    SecondSum += bpmSeconds[i];
+                    secondSum += bpmSeconds[i];
                     break;
                 }
             }
-            return SecondSum;
+            return secondSum;
 
         }
 
@@ -751,13 +752,13 @@ namespace Phidot.ChartStructure
         public double RealTime2BeatTime(double realTime)
         {
             List<double> bpmSeconds = new List<double>();
-            foreach (BPMListItem BPMInfo in BPMList)
+            foreach (BpmListItem bpmInfo in BpmList)
             {
-                int i = BPMList.IndexOf(BPMInfo);
-                if (i < BPMList.Count - 1)
+                int i = BpmList.IndexOf(bpmInfo);
+                if (i < BpmList.Count - 1)
                 {
-                    double dBeat = BPMList[i + 1].StartTime - BPMInfo.StartTime;
-                    bpmSeconds.Add(dBeat * 60 / BPMInfo.BPM);
+                    double dBeat = BpmList[i + 1].StartTime - bpmInfo.StartTime;
+                    bpmSeconds.Add(dBeat * 60 / bpmInfo.Bpm);
                 }
                 else
                 {
@@ -774,9 +775,9 @@ namespace Phidot.ChartStructure
                 second += t;
                 if (t >= realTime)
                 {
-                    double timeInBPMRange = realTime - last;
-                    var curBPMInfo = BPMList[bpmSeconds.IndexOf(t)];
-                    return (timeInBPMRange * curBPMInfo.BPM / 60) + curBPMInfo.StartTime;
+                    double timeInBpmRange = realTime - last;
+                    var curBpmInfo = BpmList[bpmSeconds.IndexOf(t)];
+                    return (timeInBpmRange * curBpmInfo.Bpm / 60) + curBpmInfo.StartTime;
                 }
                 last = second;
             }

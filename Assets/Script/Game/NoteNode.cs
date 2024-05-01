@@ -6,6 +6,8 @@ namespace Phidot.Game
 {
 	public partial class NoteNode : Node2D
 	{
+		[Export] public Label Label;
+		
 		public delegate void OnJudjedEventHandler(Vector2 globalPosition, JudgeType judgeType, NoteType noteType, bool shouldSound = true);
 		public event OnJudjedEventHandler OnJudged;
 
@@ -27,8 +29,8 @@ namespace Phidot.Game
 		
 
 
-		private RPENote _noteInfo;
-		public RPENote NoteInfo
+		private RpeNote _noteInfo;
+		public RpeNote NoteInfo
 		{
 			get
 			{
@@ -37,7 +39,7 @@ namespace Phidot.Game
 			set
 			{
 				_noteInfo = value;
-				switch ((NoteType)value.Type)
+				switch (value.Type)
 				{
 					case NoteType.Hold:
 						Head = new Sprite2D();

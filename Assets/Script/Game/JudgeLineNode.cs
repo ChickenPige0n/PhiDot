@@ -1,20 +1,14 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 using Phidot.ChartStructure;
-using System.Collections.Generic;
-using Phidot.Game;
-using System;
-using YamlDotNet.Core.Tokens;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-
 
 namespace Phidot.Game
 {
 	public partial class JudgeLineNode : Sprite2D
 	{
-		public const double HOLD_MISS_TIME = 0.05;
-		public JudgeType chartJudgeState;
+		private const double HoldMissTime = 0.05;
+		public JudgeType ChartJudgeState;
 
 
 		// Called when the node enters the scene tree for the first time.
@@ -24,128 +18,101 @@ namespace Phidot.Game
 		}
 
 
-		private int LineIndex;
-		private ChartRPE Chart;
+		private int _lineIndex;
+		private ChartRpe _chart;
 
-		public ResPack CurPack;
+		private ResPack _curPack;
 
 		[Export] public Label Idex;
 
 		[Export] public PackedScene NoteScene;
 
 		[Export] public Sprite2D TextureLine;
-		public List<NoteNode> noteInstances = new List<NoteNode>();
+		public List<NoteNode> NoteInstances = new();
 
 		public Vector2 StageSize;
 		public Vector2 WindowSize;
 		public double AspectRatio = 1.666667d;
 
 
-		public float NoteJudgeSize = 100;
-		public List<ChartManager.FingerData> fingerDatas;
-		public (NoteNode note, float dx, double dt)? HandleClick(Vector2 pos, double realTime)
-		{
-			Idex.Visible = true;
-			pos = ((pos * GetCanvasTransform()) - this.GlobalPosition).Rotated(-Rotation);
+		private float _noteJudgeSize = 100;
+		public List<ChartManager.FingerData> FingerDataList;
 
-			(NoteNode note, float dx, double dt)? closest = null;
 
-			foreach (var instance in noteInstances)
-			{
-				if (!(instance.NoteInfo.Type == NoteType.Tap || instance.NoteInfo.Type == NoteType.Hold)) continue;
-				var dt = Math.Abs(realTime - instance.NoteInfo.StartTime.RealTime);
-				var dx = Math.Abs(instance.Position.X - pos.X);
-				if (instance.State != JudgeState.Judged && dt < ChartManager.BAD_RANGE && dx < NoteJudgeSize
-					&& (!closest.HasValue || dx < closest.Value.dx))
-				{
-					closest = (instance, dx, dt);
-				}
-			}
-
-			return closest;
-		}
-
-		private double chartTime;
+		private double _chartTime;
 		public void CalcTime(double realTime)
 		{
-			var a = Chart.RealTime2BeatTime(realTime);
-			var dChartTime = a - chartTime;
-			chartTime = a;
+			var a = _chart.RealTime2BeatTime(realTime);
+			var dChartTime = a - _chartTime;
+			_chartTime = a;
 
-			var EventLayers = Chart.JudgeLineList[LineIndex].EventLayers;
+			var eventLayers = _chart.JudgeLineList[_lineIndex].EventLayers;
 
 			double xPos = 0;
 			double yPos = 0;
 			double alpha = 0;
 			double rotate = 0;
 
-			foreach (EventLayer layer in EventLayers)
+			foreach (var layer in eventLayers)
 			{
-				xPos += layer.MoveXEvents.GetValByTime(chartTime);
-				yPos += layer.MoveYEvents.GetValByTime(chartTime);
-				alpha += layer.AlphaEvents.GetValByTime(chartTime);
-				rotate += layer.RotateEvents.GetValByTime(chartTime);
+				xPos += layer.MoveXEvents.GetValByTime(_chartTime);
+				yPos += layer.MoveYEvents.GetValByTime(_chartTime);
+				alpha += layer.AlphaEvents.GetValByTime(_chartTime);
+				rotate += layer.RotateEvents.GetValByTime(_chartTime);
 			}
 
-			Position = ChartRPE.RPEPos2PixelPos(new Vector2((float)xPos, (float)yPos), StageSize) + (StageSize / 2);
+			Position = ChartRpe.RpePos2PixelPos(new Vector2((float)xPos, (float)yPos), StageSize) + (StageSize / 2);
 			RotationDegrees = (float)rotate;
-			var m = SelfModulate;
-			switch (chartJudgeState)
+			var m = ChartJudgeState switch
 			{
-				case JudgeType.Perfect:
-					m = ChartManager.PerfectColor;
-					break;
-				case JudgeType.Good:
-					m = ChartManager.GoodColor;
-					break;
-				default:
-					m = new(1, 1, 1, 1);
-					break;
-			}
-			TextureLine.SelfModulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
+				JudgeType.Perfect => ChartManager.PerfectColor,
+				JudgeType.Good => ChartManager.GoodColor,
+				_ => new Color(1, 1, 1)
+			};
+			TextureLine.Modulate = new Color(m.R, m.G, m.B, (float)alpha / 255.0f);
 
 
 
 
-			var noteList = Chart.JudgeLineList[LineIndex].Notes;
-			foreach (NoteNode instance in noteInstances)
+
+			foreach (var instance in NoteInstances)
 			{
 				var note = instance.NoteInfo;
 
-				if (chartTime > note.EndTime)
+				if (_chartTime > note.EndTime)
 				{
 					instance.Visible = false;
 					if (instance.NoteJudgeType == JudgeType.Perfect && instance.State == JudgeState.Judged && instance.NoteInfo.Type >= NoteType.Flick)
 					{
-						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
 						instance.State = JudgeState.Dead;
 					}
-					else if (instance.State == JudgeState.NotJudged && realTime - note.StartTime.RealTime >= ChartManager.BAD_RANGE)
+					else if (instance.State == JudgeState.NotJudged && realTime - note.StartTime.RealTime >= ChartManager.BadRange)
 					{
 						instance.NoteJudgeType = JudgeType.Miss;
-						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
 						instance.State = JudgeState.Judged;
 					}
 					continue;
 				}
-				var EventLayerList = Chart.JudgeLineList[LineIndex].EventLayers;
-				var newY = StageSize.Y / 7.5f * note.Speed * (float)(EventLayerList.GetCurSu(realTime) - note.FloorPosition);
+				var eventLayerList = _chart.JudgeLineList[_lineIndex].EventLayers;
+				var newY = StageSize.Y / 7.5f * note.Speed * (float)(eventLayerList.GetCurSu(realTime) - note.FloorPosition);
 				newY = note.Above == 1 ? newY : -newY;
-				instance.Position = new Vector2(instance.Position.X, chartTime >= note.StartTime ? 0 : newY);
+				instance.Position = new Vector2(instance.Position.X, realTime >= note.StartTime.RealTime ? 0 : newY);
 				if (note.Type == NoteType.Hold)
 				{
-					if (chartTime >= note.StartTime && chartTime <= note.EndTime && instance.State == JudgeState.Holding)
+					if (realTime >= note.StartTime.RealTime && realTime <= note.EndTime.RealTime && instance.State == JudgeState.Holding)
 					{
 						instance.UntouchTimer += GetProcessDeltaTime();
 
 						GD.Print($"Type: {instance.UntouchTimer}");
 
-						if (instance.UntouchTimer > HOLD_MISS_TIME)
+						if (instance.UntouchTimer > HoldMissTime)
 						{
 							instance.State = JudgeState.Judged;
 							instance.NoteJudgeType = JudgeType.Miss;
 							instance.Modulate = new Color(1, 1, 1, .5f);
-							instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, true);
+							instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
 						}
 						instance.HoldTimer += dChartTime;
 						if (instance.HoldTimer > 0.5f)
@@ -155,10 +122,10 @@ namespace Phidot.Game
 						}
 					}
 
-					var end = StageSize.Y / 7.5f * note.Speed * (float)(EventLayerList.GetCurSu(realTime) - note.CeliPosition);
+					var end = StageSize.Y / 7.5f * note.Speed * (float)(eventLayerList.GetCurSu(realTime) - note.CeliPosition);
 					end = note.Above == 1 ? end : -end;
 
-					if (chartTime >= note.StartTime)
+					if (_chartTime >= note.StartTime)
 					{
 						instance.Head.Visible = false;
 					}
@@ -170,22 +137,20 @@ namespace Phidot.Game
 
 				if (instance.NoteInfo.Type == NoteType.Tap) continue;
 
-				foreach (var fingerData in fingerDatas)
+				foreach (var fingerData in FingerDataList)
 				{
-					var pos = ((fingerData.curPos * GetCanvasTransform()) - GlobalPosition).Rotated(-Rotation);
+					var pos = ((fingerData.CurPos * GetCanvasTransform()) - GlobalPosition).Rotated(-Rotation);
 					var dt = Math.Abs(realTime - instance.NoteInfo.StartTime.RealTime);
 					var dx = Math.Abs(instance.Position.X - pos.X);
-					if (instance.State != JudgeState.Judged && dx < NoteJudgeSize)
+					if (instance.State == JudgeState.Judged || !(dx < _noteJudgeSize)) continue;
+					if (instance.NoteInfo.Type == NoteType.Hold)
 					{
-						if (instance.NoteInfo.Type == NoteType.Hold)
-						{
-							instance.UntouchTimer = 0;
-							continue;
-						}
-						if (dt < ChartManager.GOOD_RANGE && (instance.NoteInfo.Type == NoteType.Drag || fingerData.curVec.Length() >= 180))
-						{
-							instance.State = JudgeState.Judged;
-						}
+						instance.UntouchTimer = 0;
+						continue;
+					}
+					if (dt < ChartManager.GoodRange && (instance.NoteInfo.Type == NoteType.Drag || fingerData.CurVec.Length() >= 180))
+					{
+						instance.State = JudgeState.Judged;
 					}
 				}
 			}
@@ -193,57 +158,55 @@ namespace Phidot.Game
 		}
 		public Vector2 CalcScale()
 		{
-			float newScale = 2.5f * StageSize.DistanceTo(Vector2.Zero) / this.TextureLine.Texture.GetWidth();
+			var newScale = 2.5f * StageSize.DistanceTo(Vector2.Zero) / TextureLine.Texture.GetWidth();
 			TextureLine.Scale = Vector2.One * newScale;
 
 			// TODO:
 			// Support mutable note size.
-			var noteScale = StageSize.X * 175 / (1350 * CurPack.TapTexture.GetSize().X);
-			foreach (var note in noteInstances)
+			var noteScale = StageSize.X * 175 / (1350 * _curPack.TapTexture.GetSize().X);
+			foreach (var note in NoteInstances)
 			{
 				var flipFactor = note.NoteInfo.Above == 1 ? 1 : -1;
 				note.Head.Scale = Vector2.One * noteScale;
-				if (note.NoteInfo.Type == NoteType.Hold)
-				{
-					note.Body.Scale = Vector2.One * flipFactor * noteScale;
-					note.Tail.Scale = Vector2.One * flipFactor * noteScale;
-				}
+				if (note.NoteInfo.Type != NoteType.Hold) continue;
+				note.Body.Scale = Vector2.One * flipFactor * noteScale;
+				note.Tail.Scale = Vector2.One * flipFactor * noteScale;
 			}
 
 			return new Vector2(newScale, newScale);
 		}
 
-		public void Init(ChartRPE chart, int lineIndex)
+		public void Init(ChartRpe chart, int lineIndex)
 		{
-			Chart = chart;
-			LineIndex = lineIndex;
+			_chart = chart;
+			_lineIndex = lineIndex;
 
 
-			var ResPackManager = GetNode<ResPackManager>("/root/ResPackManager");
-			CurPack = ResPackManager.CurPack;
+			var resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
+			_curPack = resPackManager.CurPack;
 
 			WindowSize = DisplayServer.WindowGetSize();
-			StageSize = new Vector2I((int)((double)WindowSize.Y * AspectRatio), (int)WindowSize.Y);
+			StageSize = new Vector2I((int)(WindowSize.Y * AspectRatio), (int)WindowSize.Y);
 			CalcScale();
 
 			TextureLine.Modulate = new(0xecebb0e7);
 			// Note Init
-			Idex.Text = LineIndex.ToString();
+			Idex.Text = _lineIndex.ToString();
 			var noteList = chart.JudgeLineList[lineIndex].Notes;
-			foreach (RPENote noteInfo in noteList.OrEmptyIfNull())
+			foreach (RpeNote noteInfo in noteList.OrEmptyIfNull())
 			{
 				var instance = NoteScene.Instantiate<NoteNode>();
 				instance.NoteInfo = noteInfo;
-				noteInstances.Add(instance);
+				NoteInstances.Add(instance);
 				switch (noteInfo.Type)
 				{
 					case NoteType.Tap:
 						instance.ZIndex = 1;
-						instance.Head.Texture = instance.NoteInfo.IsHighLight ? CurPack.TapHLTexture : CurPack.TapTexture;
+						instance.Head.Texture = instance.NoteInfo.IsHighLight ? _curPack.TapHlTexture : _curPack.TapTexture;
 						break;
 					case NoteType.Hold:
 						instance.ZIndex = 0;
-						var (head, body, tail) = instance.NoteInfo.IsHighLight ? CurPack.HoldHLTextures : CurPack.HoldTextures;
+						var (head, body, tail) = instance.NoteInfo.IsHighLight ? _curPack.HoldHlTextures : _curPack.HoldTextures;
 						instance.Head.Texture = head;
 						instance.Body.Texture = body;
 						instance.Tail.Texture = tail;
@@ -253,13 +216,11 @@ namespace Phidot.Game
 						break;
 					case NoteType.Flick:
 						instance.ZIndex = 3;
-						instance.Head.Texture = instance.NoteInfo.IsHighLight ? CurPack.FlickHLTexture : CurPack.FlickTexture;
+						instance.Head.Texture = instance.NoteInfo.IsHighLight ? _curPack.FlickHlTexture : _curPack.FlickTexture;
 						break;
 					case NoteType.Drag:
 						instance.ZIndex = 2;
-						instance.Head.Texture = instance.NoteInfo.IsHighLight ? CurPack.DragHLTexture : CurPack.DragTexture;
-						break;
-					default:
+						instance.Head.Texture = instance.NoteInfo.IsHighLight ? _curPack.DragHlTexture : _curPack.DragTexture;
 						break;
 				}
 				var posX = noteInfo.PositionX * (StageSize.X / 1350.0f);
@@ -269,7 +230,7 @@ namespace Phidot.Game
 			}
 
 			CalcTime(0);
-			foreach (var note in noteInstances)
+			foreach (var note in NoteInstances)
 			{
 				note.Visible = true;
 			}

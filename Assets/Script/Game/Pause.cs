@@ -1,13 +1,12 @@
 using Godot;
 using Phidot.Game;
-using System.Threading;
 
 public partial class Pause : TextureButton
 {
-    private bool Paused = false;  // 计时器缓存
+    private bool _paused;  // 计时器缓存
 
     [Export]
-    public ChartManager chartManager;
+    public ChartManager ChartManager;
 
     public void Pause_Game()  // 暂停游戏函数
     {

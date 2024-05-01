@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Phidot.Game
 {
-    public partial class ChartData
+    public class ChartData
     {
         //曲绘绝对路径
         public string ImageSource { get; set; }
@@ -31,7 +31,7 @@ namespace Phidot.Game
     	    Charter       = string.Empty;
     	    Illustrator   = string.Empty;
     	}
-	public static ChartData FromString(string RootDir, string infoContent)
+	public static ChartData FromString(string rootDir, string infoContent)
 	{
 		ChartData cd = new ChartData();
         	string[] lines = infoContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -47,7 +47,7 @@ namespace Phidot.Game
         	            cd.ChartPath = infos[1].Trim();
         	            break;
         	        case "Picture":
-        	            cd.ImageSource = Path.Combine(RootDir,infos[1].Trim());
+        	            cd.ImageSource = Path.Combine(rootDir,infos[1].Trim());
         	            break;
         	        case "Level":
         	            cd.ChartDiff = infos[1].Trim();
@@ -64,9 +64,7 @@ namespace Phidot.Game
         	        case "Charter":
         	            cd.Charter = infos[1].Trim();
         	            break;
-        	        default:
-        	            break;
-        	    }
+	            }
         	}
 		return cd;
 	}

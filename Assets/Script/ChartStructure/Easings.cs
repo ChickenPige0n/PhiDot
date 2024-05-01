@@ -5,13 +5,13 @@ namespace Phidot.ChartStructure
     internal class Easings
     {
         //constants for Back
-        const double c1 = 1.70158;
-        const double c2 = c1 * 1.525;
-        const double c3 = c1 + 1;
-        const double c4 = 2 * Math.PI / 3;
-        const double n1 = 7.5625;
-        const double d1 = 2.75;
-        const double c5 = 2 * Math.PI / 4.5;
+        const double C1 = 1.70158;
+        const double C2 = C1 * 1.525;
+        const double C3 = C1 + 1;
+        const double C4 = 2 * Math.PI / 3;
+        const double N1 = 7.5625;
+        const double D1 = 2.75;
+        const double C5 = 2 * Math.PI / 4.5;
 
 
         //1
@@ -112,12 +112,12 @@ namespace Phidot.ChartStructure
         //20
         public static double EaseOutBack(double x)
         {
-            return 1 + c3 * Math.Pow(x - 1, 3) + c1 * Math.Pow(x - 1, 2);
+            return 1 + C3 * Math.Pow(x - 1, 3) + C1 * Math.Pow(x - 1, 2);
         }
         //21
         public static double EaseInBack(double x)
         {
-            return c3 * x * x * x - c1 * x * x;
+            return C3 * x * x * x - C1 * x * x;
         }
         //22
         public static double EaseInOutCirc(double x)
@@ -130,8 +130,8 @@ namespace Phidot.ChartStructure
         public static double EaseInOutBack(double x)
         {
             return x < 0.5
-            ? (Math.Pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
-            : (Math.Pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+            ? (Math.Pow(2 * x, 2) * ((C2 + 1) * 2 * x - C2)) / 2
+            : (Math.Pow(2 * x - 2, 2) * ((C2 + 1) * (x * 2 - 2) + C2) + 2) / 2;
         }
         //24
         public static double EaseOutElastic(double x)
@@ -140,7 +140,7 @@ namespace Phidot.ChartStructure
               ? 0
               : x == 1
               ? 1
-              : Math.Pow(2, -10 * x) * Math.Sin((x * 10 - 0.75) * c4) + 1;
+              : Math.Pow(2, -10 * x) * Math.Sin((x * 10 - 0.75) * C4) + 1;
         }
         //25
         public static double EaseInElastic(double x)
@@ -149,27 +149,27 @@ namespace Phidot.ChartStructure
               ? 0
               : x == 1
               ? 1
-              : -Math.Pow(2, 10 * x - 10) * Math.Sin((x * 10 - 10.75) * c4);
+              : -Math.Pow(2, 10 * x - 10) * Math.Sin((x * 10 - 10.75) * C4);
         }
         //26
         public static double EaseOutBounce(double x)
         {
-            if (x < 1 / d1)
+            if (x < 1 / D1)
             {
-                return n1 * x * x;
+                return N1 * x * x;
             }
-            else if (x < 2 / d1)
+
+            if (x < 2 / D1)
             {
-                return n1 * (x -= 1.5 / d1) * x + 0.75;
+                return N1 * (x -= 1.5 / D1) * x + 0.75;
             }
-            else if (x < 2.5 / d1)
+
+            if (x < 2.5 / D1)
             {
-                return n1 * (x -= 2.25 / d1) * x + 0.9375;
+                return N1 * (x -= 2.25 / D1) * x + 0.9375;
             }
-            else
-            {
-                return n1 * (x -= 2.625 / d1) * x + 0.984375;
-            }
+
+            return N1 * (x -= 2.625 / D1) * x + 0.984375;
 
         }
         //27
@@ -188,36 +188,36 @@ namespace Phidot.ChartStructure
 
         public delegate double EasingFunc(double x);
 
-        public static EasingFunc[] easeFuncs = {
-            new(EaseLinear),
-            new(EaseLinear),
-            new(EaseOutSin),
-            new(EaseInSin),
-            new(EaseOutQuad),
-            new(EaseInQuad),//5
-            new(EaseInOutSin),
-            new(EaseInOutQuad),
-            new(EaseOutCubic),
-            new(EaseInCubic),
-            new(EaseOutQuart),//10
-            new(EaseInQuart),
-            new(EaseInOutCubic),
-            new(EaseInOutQuart),
-            new(EaseOutQuint),
-            new(EaseInQuint),//15
-            new(EaseOutExpo),
-            new(EaseInExpo),
-            new(EaseOutCirc),
-            new(EaseInCirc),
-            new(EaseOutBack),//20
-            new(EaseInBack),
-            new(EaseInOutCirc),
-            new(EaseInOutBack),
-            new(EaseOutElastic),
-            new(EaseInElastic),//25
-            new(EaseOutBounce),
-            new(EaseInBounce),
-            new(EaseInOutBounce)
+        public static EasingFunc[] EaseFuncs = {
+            EaseLinear,
+            EaseLinear,
+            EaseOutSin,
+            EaseInSin,
+            EaseOutQuad,
+            EaseInQuad,//5
+            EaseInOutSin,
+            EaseInOutQuad,
+            EaseOutCubic,
+            EaseInCubic,
+            EaseOutQuart,//10
+            EaseInQuart,
+            EaseInOutCubic,
+            EaseInOutQuart,
+            EaseOutQuint,
+            EaseInQuint,//15
+            EaseOutExpo,
+            EaseInExpo,
+            EaseOutCirc,
+            EaseInCirc,
+            EaseOutBack,//20
+            EaseInBack,
+            EaseInOutCirc,
+            EaseInOutBack,
+            EaseOutElastic,
+            EaseInElastic,//25
+            EaseOutBounce,
+            EaseInBounce,
+            EaseInOutBounce
         };
     }
 }

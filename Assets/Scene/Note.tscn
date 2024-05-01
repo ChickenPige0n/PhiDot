@@ -2,6 +2,12 @@
 
 [ext_resource type="Script" path="res://Assets/Script/Game/NoteNode.cs" id="1_3qjq2"]
 
-[node name="Note" type="Node2D"]
-visible = false
+[node name="Note" type="Node2D" node_paths=PackedStringArray("Label")]
 script = ExtResource("1_3qjq2")
+Label = NodePath("Label")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -136.0
+offset_top = 44.0
+offset_right = 142.0
+offset_bottom = 67.0

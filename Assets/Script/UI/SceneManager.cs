@@ -1,5 +1,4 @@
 using Godot;
-using System;
 using Phidot.Game;
 
 public partial class SceneManager : Node2D
@@ -61,18 +60,18 @@ public partial class SceneManager : Node2D
 	}
 	public void ResPackSelected(string path)
 	{
-		var ResPackManager = GetNode<ResPackManager>("/root/ResPackManager");
-		ResPackManager.LoadFromDir(path);
-		ResPackManager.SetCurPack(ResPackManager.ResPackList.Count - 1);
+		var resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
+		resPackManager.LoadFromDir(path);
+		resPackManager.SetCurPack(resPackManager.ResPackList.Count - 1);
 	}
 
 	
 
 	public void ChartSelected(string path)
 	{
-		var Scene = GameScene.Instantiate<ChartManager>();
-		AddChild(Scene);
-		Scene.LoadFromDir(path);
+		var scene = GameScene.Instantiate<ChartManager>();
+		AddChild(scene);
+		scene.LoadFromDir(path);
 	}
 
 }
