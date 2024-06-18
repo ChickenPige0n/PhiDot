@@ -1,5 +1,4 @@
 using Godot;
-using Phidot.Game;
 
 public partial class SceneManager : Node2D
 {

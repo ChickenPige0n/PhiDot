@@ -5,8 +5,6 @@ using Godot;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Phidot.Game;
-
 public partial class ResPackManager : Node
 {
     public ResPack CurPack { get; set; }

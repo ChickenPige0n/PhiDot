@@ -12,4 +12,7 @@
       <HintPath>Assets/Bin/Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Assets\Script\Game\Pause.cs" />
+  </ItemGroup>
 </Project>
