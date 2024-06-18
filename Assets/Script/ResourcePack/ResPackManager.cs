@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using Godot;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 public partial class ResPackManager : Node
 {
-    public ResPack CurPack { get; set; }
-    public List<ResPackInfo> ResPackList { get; set; } = new();
+    public ResPack CurPack { get; private set; }
+    public List<ResPackInfo> ResPackList { get; } = new();
 
     public override void _Ready()
     {
@@ -75,31 +74,31 @@ public class ResPackInfo
 
 public class ResPack
 {
-    public Texture2D TapTexture;
-    public Texture2D FlickTexture;
-    public Texture2D DragTexture;
+    public readonly Texture2D TapTexture;
+    public readonly Texture2D FlickTexture;
+    public readonly Texture2D DragTexture;
     public (Texture2D head, Texture2D body, Texture2D tail) HoldTextures;
 
 
 
-    public Texture2D TapHlTexture;
-    public Texture2D FlickHlTexture;
-    public Texture2D DragHlTexture;
+    public readonly Texture2D TapHlTexture;
+    public readonly Texture2D FlickHlTexture;
+    public readonly Texture2D DragHlTexture;
     public (Texture2D head, Texture2D body, Texture2D tail) HoldHlTextures;
 
 
-    public SpriteFrames HitEffectFrames;
+    public readonly SpriteFrames HitEffectFrames;
 
 
     public AudioStream TapSound;
     public AudioStream FlickSound;
     public AudioStream DragSound;
 
-    public float HitFxScale = 1.0f;
+    public readonly float HitFxScale = 1.0f;
 
 
 
-    public static SpriteFrames GetHeFrames(AtlasTexture heTexture, (int line, int column) heInfo)
+    private static SpriteFrames GetHeFrames(AtlasTexture heTexture, (int line, int column) heInfo)
     {
         var frames = new SpriteFrames();
         var size = heTexture.Atlas.GetSize();
@@ -121,7 +120,7 @@ public class ResPack
         return frames;
     }
 
-    public static (Texture2D head, Texture2D body, Texture2D tail) GetHoldTexture(AtlasTexture holdTexture, (int head, int tail) info)
+    private static (Texture2D head, Texture2D body, Texture2D tail) GetHoldTexture(AtlasTexture holdTexture, (int head, int tail) info)
     {
 
         var size = holdTexture.Atlas.GetSize();

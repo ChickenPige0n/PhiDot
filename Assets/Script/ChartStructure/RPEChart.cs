@@ -51,20 +51,11 @@ public class AlphaControlItem
 }
 public class RpeEvent
 {
-    public RpeEvent()
-    {
-        LinkGroup = 0;
-        EasingLeft = 0;
-        EasingRight = 1;
-        Bezier = 0;
-        BezierPoints = new BezierPoints { 0.0f, 0.0f, 0.0f, 0.0f };
-    }
-
     public double GetCurVal(double t)
     {
         if (t > StartTime && t < EndTime)
         {
-            var easeResult = Easings.EaseFuncs[EasingType]((t - StartTime) / (EndTime - StartTime));
+            var easeResult = Easings.EaseFunctions[EasingType]((t - StartTime) / (EndTime - StartTime));
             return (Start * (1 - easeResult)) + (End * easeResult);
         }
 
@@ -77,13 +68,17 @@ public class RpeEvent
     }
 
     [JsonPropertyName("bezier")]
-    public int Bezier { get; set; }
+    public int Bezier { get; set; } = 0;
+
     [JsonPropertyName("bezierPoints")]
-    public BezierPoints BezierPoints { get; set; }
+    public BezierPoints BezierPoints { get; set; } = new() { 0.0f, 0.0f, 0.0f, 0.0f };
+
     [JsonPropertyName("easingLeft")]
-    public float EasingLeft { get; set; }
+    public float EasingLeft { get; set; } = 0;
+
     [JsonPropertyName("easingRight")]
-    public float EasingRight { get; set; }
+    public float EasingRight { get; set; } = 1;
+
     [JsonPropertyName("easingType")]
     public int EasingType { get; set; }
     [JsonPropertyName("end")]
@@ -91,7 +86,8 @@ public class RpeEvent
     [JsonPropertyName("endTime")]
     public Time EndTime { get; set; }
     [JsonPropertyName("linkgroup")]
-    public int LinkGroup { get; set; }
+    public int LinkGroup { get; set; } = 0;
+
     [JsonPropertyName("start")]
     public float Start { get; set; }
     [JsonPropertyName("startTime")]
@@ -260,19 +256,18 @@ public class SpeedEventList : List<RpeSpeedEvent>
     /// <summary>
     /// 获取当前时间的速度积分
     /// </summary>
-    /// <param name="bPMList"></param>
     /// <param name="time"></param>
-    /// <returns></returns>
+    /// <returns>从谱面开始到当前时间的总路程</returns>
     public double GetCurTimeSu(double time)
     {
-        double floorPosition = 0.0d;
+        var floorPosition = 0.0d;
         foreach (RpeSpeedEvent speedEvent in this)
         {
-            double startTime = speedEvent.StartTime.RealTime;
-            double endTime = speedEvent.EndTime.RealTime;
+            var startTime = speedEvent.StartTime.RealTime;
+            var endTime = speedEvent.EndTime.RealTime;
 
-            int i = IndexOf(speedEvent);
-            if (time == speedEvent.StartTime.RealTime)
+            var i = IndexOf(speedEvent);
+            if (Math.Abs(time - speedEvent.StartTime.RealTime) < 1e-5)
             {
                 floorPosition += speedEvent.FloorPosition;
                 break;
@@ -287,12 +282,10 @@ public class SpeedEventList : List<RpeSpeedEvent>
                 break;
             }
 
-            if (Count - 1 == i || time <= this[i + 1].StartTime.RealTime)
-            {
-                floorPosition += speedEvent.FloorPosition + (speedEvent.End + speedEvent.Start) * (endTime - startTime) / 2 +
-                                 speedEvent.End * (time - endTime) / 1;
-                break;
-            }
+            if (Count - 1 != i && !(time <= this[i + 1].StartTime.RealTime)) continue;
+            floorPosition += speedEvent.FloorPosition + (speedEvent.End + speedEvent.Start) * (endTime - startTime) / 2 +
+                             speedEvent.End * (time - endTime) / 1;
+            break;
         }
 
         return floorPosition;
@@ -303,69 +296,36 @@ public class SpeedEventList : List<RpeSpeedEvent>
 
 public class EventLayer
 {
-    [JsonIgnore]
-    private EventList _alphaEvents;
-    [JsonIgnore]
-    private EventList _moveXEvents;
-    [JsonIgnore]
-    private EventList _moveYEvents;
-    [JsonIgnore]
-    private EventList _rotateEvents;
-    [JsonIgnore]
-    private SpeedEventList _speedEvents;
-
-
     [JsonPropertyName("alphaEvents")]
-    public EventList AlphaEvents
-    {
-        get { return _alphaEvents; }
-        set { _alphaEvents = value; }
-    }
+    [field: JsonIgnore]
+    public EventList AlphaEvents { get; set; }
+
     [JsonPropertyName("moveXEvents")]
-    public EventList MoveXEvents
-    {
-        get { return _moveXEvents; }
-        set { _moveXEvents = value; }
-    }
+    [field: JsonIgnore]
+    public EventList MoveXEvents { get; set; }
 
     [JsonPropertyName("moveYEvents")]
-    public EventList MoveYEvents
-    {
-        get { return _moveYEvents; }
-        set { _moveYEvents = value; }
-    }
+    [field: JsonIgnore]
+    public EventList MoveYEvents { get; set; }
 
     [JsonPropertyName("rotateEvents")]
-    public EventList RotateEvents
-    {
-        get { return _rotateEvents; }
-        set { _rotateEvents = value; }
-    }
+    [field: JsonIgnore]
+    public EventList RotateEvents { get; set; }
 
     [JsonPropertyName("speedEvents")]
-    public SpeedEventList SpeedEvents
-    {
-        get { return _speedEvents; }
-        set { _speedEvents = value; }
-    }
+    [field: JsonIgnore]
+    public SpeedEventList SpeedEvents { get; set; }
 }
 public class EventLayerList : List<EventLayer>
 {
     /// <summary>
 	/// 获取时间范围内速度积分
 	/// </summary>
-	/// <param name="startTime"></param>
 	/// <param name="time"></param>
-	/// <param name="factor"></param>
 	/// <returns>单位：屏幕高度</returns>
-	public float GetCurSu(double time)
+	public double GetCurSu(double time)
     {
-        double result = 0;
-        foreach (var layer in this)
-        {
-            result += layer.SpeedEvents.GetCurTimeSu(time);
-        }
-        return (float)result;
+        return this.Sum(layer => layer.SpeedEvents.GetCurTimeSu(time));
     }
 }
 
@@ -374,7 +334,7 @@ public class Extended
 {
     public Extended()
     {
-        RpeEvent defaultInc = new RpeEvent
+        var defaultInc = new RpeEvent
         {
             Start = 0.0f,
             End = 0.0f,
@@ -395,7 +355,7 @@ public class NoteEndTimeComparer : Comparer<RpeNote>
 {
     public override int Compare(RpeNote x, RpeNote y)
     {
-        if (x.EndTime.RealTime > y.EndTime.RealTime) return 1;
+        if (x!.EndTime.RealTime > y!.EndTime.RealTime) return 1;
         if (x.EndTime.RealTime < y.EndTime.RealTime) return -1;
         return 0;
     }
@@ -404,7 +364,7 @@ public class NoteStartTimeComparer : Comparer<RpeNote>
 {
     public override int Compare(RpeNote x, RpeNote y)
     {
-        if (x.StartTime.RealTime > y.StartTime.RealTime) return 1;
+        if (x!.StartTime.RealTime > y!.StartTime.RealTime) return 1;
         if (x.StartTime.RealTime < y.StartTime.RealTime) return -1;
         return 0;
     }
@@ -446,7 +406,7 @@ public class RpeNote
     [JsonIgnore]
     public double FloorPosition;
     [JsonIgnore]
-    public double CeliPosition;
+    public double TopPosition;
     [JsonIgnore]
     public bool IsHighLight;
 }
@@ -594,6 +554,13 @@ public class JudgeManager
                 MaxCombo = 0;
                 ChartJudgeType = JudgeType.Miss;
                 break;
+            case JudgeType.Bad:
+                MissCount += 1;
+                MaxCombo = 0;
+                ChartJudgeType = JudgeType.Miss;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
     }
 
@@ -644,6 +611,11 @@ public class ChartRpe
     [JsonIgnore]
     public JudgeManager JudgeData = new();
 
+    public ChartRpe(List<BpmListItem> bpmList)
+    {
+        BpmList = bpmList;
+    }
+
     /// <summary>
     /// 预计算一些数值
     /// </summary>
@@ -663,11 +635,11 @@ public class ChartRpe
             }
             foreach (var layer in line.EventLayers.OrEmptyIfNull())
             {
-                layer.SpeedEvents ??= new SpeedEventList(true);
-                layer.MoveXEvents ??= new EventList(withBase: true);
-                layer.MoveYEvents ??= new EventList(withBase: true);
-                layer.MoveYEvents ??= new EventList(withBase: true);
-                layer.AlphaEvents ??= new EventList(withBase: true);
+                layer.SpeedEvents  ??= new SpeedEventList(true);
+                layer.MoveXEvents  ??= new EventList(withBase: true);
+                layer.MoveYEvents  ??= new EventList(withBase: true);
+                layer.MoveYEvents  ??= new EventList(withBase: true);
+                layer.AlphaEvents  ??= new EventList(withBase: true);
                 layer.RotateEvents ??= new EventList(withBase: true);
 
                 foreach (var e in layer.SpeedEvents.OrEmptyIfNull())
@@ -683,7 +655,7 @@ public class ChartRpe
                 foreach (var layer in line.EventLayers)
                 {
                     note.FloorPosition += layer.SpeedEvents.GetCurTimeSu(note.StartTime.RealTime);
-                    note.CeliPosition += layer.SpeedEvents.GetCurTimeSu(note.EndTime.RealTime);
+                    note.TopPosition += layer.SpeedEvents.GetCurTimeSu(note.EndTime.RealTime);
                 }
             }
         }
@@ -707,10 +679,10 @@ public class ChartRpe
     /// <summary>
     /// 将拍数转换为秒数
     /// </summary>
-    public double BeatTime2RealTime(double beatTime)
+    private double BeatTime2RealTime(double beatTime)
     {
         var bPmList = BpmList;
-        List<double> bpmSeconds = new List<double>();
+        var bpmSeconds = new List<double>();
         foreach (BpmListItem bpmInfo in bPmList)
         {
             int i = bPmList.IndexOf(bpmInfo);
@@ -725,10 +697,10 @@ public class ChartRpe
             }
         }
 
-        double secondSum = 0.0d;
+        var secondSum = 0.0d;
         foreach (BpmListItem bpmInfo in bPmList)
         {
-            int i = bPmList.IndexOf(bpmInfo);
+            var i = bPmList.IndexOf(bpmInfo);
             if (i == bPmList.Count - 1 || bPmList[i + 1].StartTime >= beatTime)
             {
                 secondSum += (beatTime - bpmInfo.StartTime) * 60 / bpmInfo.Bpm;
@@ -748,13 +720,13 @@ public class ChartRpe
     /// </summary>
     public double RealTime2BeatTime(double realTime)
     {
-        List<double> bpmSeconds = new List<double>();
-        foreach (BpmListItem bpmInfo in BpmList)
+        var bpmSeconds = new List<double>();
+        foreach (var bpmInfo in BpmList)
         {
-            int i = BpmList.IndexOf(bpmInfo);
+            var i = BpmList.IndexOf(bpmInfo);
             if (i < BpmList.Count - 1)
             {
-                double dBeat = BpmList[i + 1].StartTime - bpmInfo.StartTime;
+                var dBeat = BpmList[i + 1].StartTime - bpmInfo.StartTime;
                 bpmSeconds.Add(dBeat * 60 / bpmInfo.Bpm);
             }
             else

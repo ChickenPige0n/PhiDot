@@ -5,12 +5,12 @@ using System.IO;
 public class ChartData
 {
     //曲绘绝对路径
-    public string ImageSource { get; set; }
-    public string MusicFileName { get; set; }
-    public string ChartFileName { get; set; }
+    public string ImageSource { get; private set; }
+    public string MusicFileName { get; private set; }
+    public string ChartFileName { get; private set; }
     
-    public string ChartName { get; set; }
-    public string ChartDiff { get; set; }
+    public string ChartName { get; private set; }
+    public string ChartDiff { get; private set; }
     public string ChartPath { get; set; }
 
     public string Composer { get; set; }
@@ -18,7 +18,7 @@ public class ChartData
 
     public string Illustrator { get; set; }
 
-public ChartData()
+    private ChartData()
 	{
 	    ImageSource   = string.Empty;
 	    MusicFileName = string.Empty;

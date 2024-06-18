@@ -119,7 +119,7 @@ public partial class JudgeLineNode : Sprite2D
 					}
 				}
 
-				var end = StageSize.Y / 7.5f * note.Speed * (float)(eventLayerList.GetCurSu(realTime) - note.CeliPosition);
+				var end = StageSize.Y / 7.5f * note.Speed * (float)(eventLayerList.GetCurSu(realTime) - note.TopPosition);
 				end = note.Above == 1 ? end : -end;
 
 				if (_chartTime >= note.StartTime)

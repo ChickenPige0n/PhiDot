@@ -114,13 +114,13 @@ public partial class ChartManager : Control
             int i = _chart.JudgeLineList.IndexOf(line);
             var lineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
             AddChild(lineInstance);
-            lineInstance.FingerDataList = FingerDatas;
+            lineInstance!.FingerDataList = FingerDataList;
             lineInstance.Init(_chart, i);
             lineInstance.ZIndex = _chart.JudgeLineList[i].ZOrder;
             lineInstance.AspectRatio = AspectRatio;
             JudgeLineInstances.Add(lineInstance);
 
-            foreach (NoteNode note in lineInstance.NoteInstances)
+            foreach (var note in lineInstance.NoteInstances)
             {
                 note.OnJudged += JudgedEventHandler;
             }
@@ -333,7 +333,7 @@ public partial class ChartManager : Control
     public const double PerfectRange = 0.08;
     private float _noteJudgeSize = 100;
 
-    public List<FingerData> FingerDatas = new();
+    public List<FingerData> FingerDataList = new();
 
     public class FingerData
     {
@@ -352,12 +352,12 @@ public partial class ChartManager : Control
         base._Input(@event);
         switch (@event)
         {
-            case InputEventScreenTouch { Pressed: false } touch when FingerDatas.Count > touch.Index:
-                FingerDatas.RemoveAt(touch.Index);
+            case InputEventScreenTouch { Pressed: false } touch when FingerDataList.Count > touch.Index:
+                FingerDataList.RemoveAt(touch.Index);
                 return;
             case InputEventScreenTouch touch:
             {
-                FingerDatas.Add(new FingerData(touch.Position));
+                FingerDataList.Add(new FingerData(touch.Position));
 
 
                 var selected = JudgeLineInstances
@@ -401,8 +401,8 @@ public partial class ChartManager : Control
                 break;
             }
             case InputEventScreenDrag dragEvent:
-                FingerDatas[dragEvent.Index].CurPos += dragEvent.Relative;
-                FingerDatas[dragEvent.Index].CurVec = dragEvent.Velocity;
+                FingerDataList[dragEvent.Index].CurPos += dragEvent.Relative;
+                FingerDataList[dragEvent.Index].CurVec = dragEvent.Velocity;
                 break;
         }
     }

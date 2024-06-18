@@ -16,7 +16,7 @@ public partial class NoteNode : Node2D
 			x * (float)Math.Cos(parent.Rotation),
 			x * (float)Math.Sin(parent.Rotation)
 		) + parent.GlobalPosition;
-		OnJudged(pos,judgeType, noteType, shouldSound);
+		OnJudged?.Invoke(pos, judgeType, noteType, shouldSound);
 	}
 
 	public Sprite2D Head;
@@ -29,10 +29,7 @@ public partial class NoteNode : Node2D
 	private RpeNote _noteInfo;
 	public RpeNote NoteInfo
 	{
-		get
-		{
-			return _noteInfo;
-		}
+		get => _noteInfo;
 		set
 		{
 			_noteInfo = value;

@@ -3,13 +3,12 @@ using System;
 public class Easings
 {
     //constants for Back
-    const double C1 = 1.70158;
-    const double C2 = C1 * 1.525;
-    const double C3 = C1 + 1;
-    const double C4 = 2 * Math.PI / 3;
-    const double N1 = 7.5625;
-    const double D1 = 2.75;
-    const double C5 = 2 * Math.PI / 4.5;
+    private const double C1 = 1.70158;
+    private const double C2 = C1 * 1.525;
+    private const double C3 = C1 + 1;
+    private const double C4 = 2 * Math.PI / 3;
+    private const double N1 = 7.5625;
+    private const double D1 = 2.75;
 
 
     //1
@@ -90,7 +89,7 @@ public class Easings
     //16
     public static double EaseOutExpo(double x)
     {
-        return x == 1 ? 1 : 1 - Math.Pow(2, -10.0 * x);
+        return Math.Abs(x - 1) < 1e-5 ? 1 : 1 - Math.Pow(2, -10.0 * x);
     }
     //17
     public static double EaseInExpo(double x)
@@ -136,7 +135,7 @@ public class Easings
     {
         return x == 0
           ? 0
-          : x == 1
+          : Math.Abs(x - 1) < 1e-5
           ? 1
           : Math.Pow(2, -10 * x) * Math.Sin((x * 10 - 0.75) * C4) + 1;
     }
@@ -145,7 +144,7 @@ public class Easings
     {
         return x == 0
           ? 0
-          : x == 1
+          : Math.Abs(x - 1) < 1e-5
           ? 1
           : -Math.Pow(2, 10 * x - 10) * Math.Sin((x * 10 - 10.75) * C4);
     }
@@ -186,7 +185,7 @@ public class Easings
 
     public delegate double EasingFunc(double x);
 
-    public static EasingFunc[] EaseFuncs = {
+    public static EasingFunc[] EaseFunctions = {
         EaseLinear,
         EaseLinear,
         EaseOutSin,
