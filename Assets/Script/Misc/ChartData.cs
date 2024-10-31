@@ -17,6 +17,8 @@ public class ChartData
     public string Charter { get; set; }
 
     public string Illustrator { get; set; }
+    
+    public string Root { get; set; }
 
     private ChartData()
 	{
@@ -29,10 +31,12 @@ public class ChartData
 	    Composer      = string.Empty;
 	    Charter       = string.Empty;
 	    Illustrator   = string.Empty;
-	}
+        Root          = string.Empty;
+    }
     public static ChartData FromString(string rootDir, string infoContent)
     {
     	ChartData cd = new ChartData();
+        cd.Root = rootDir;
         string[] lines = infoContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         foreach (string line in lines)
         {

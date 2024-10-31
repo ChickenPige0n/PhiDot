@@ -1,14 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using Godot;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Color = Godot.Color;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 public partial class ChartManager : Control
 {
-    public bool IsAutoPlay = false;
+    public bool IsAutoPlay = true;
 
     private ResPackManager _resPackManager;
 
@@ -16,10 +22,12 @@ public partial class ChartManager : Control
 
     private ChartData _chartData;
 
-    public double AspectRatio = 1.666667d;
+    public double AspectRatio = 1.777778d;
 
 
     #region UIReferences
+
+    [Export] public Label FPSLabel;
 
     [Export] public Label ScoreLabel;
     public int Score;
@@ -28,7 +36,8 @@ public partial class ChartManager : Control
     [Export] public Label GameModeLabel;
     [Export] public Label ComboLabel;
     public int Combo;
-    [Export] public Sprite2D BackGroundImage;
+    [Export] public TextureRect BackGroundControl;
+    [Export] public TextureRect BackGroundImage;
 
     [Export] public ProgressBar ProgressBar;
 
@@ -58,7 +67,7 @@ public partial class ChartManager : Control
     [Export] public PackedScene JudgeLineScene;
 
 
-    public List<JudgeLineNode> JudgeLineInstances = new List<JudgeLineNode>();
+    public List<JudgeLineNode> JudgeLineInstances = new();
 
 
     public double PlaybackTime;
@@ -69,17 +78,69 @@ public partial class ChartManager : Control
     #region LoadChart
 
     // Called when the node enters the scene tree for the first time.
-    public void LoadFromDir(string dir)
+    public void LoadFromDir(string absPath)
+    {
+        var infoPath = Path.Combine(absPath, "info.txt");
+        var infoContent = File.ReadAllText(infoPath);
+        var data = ChartData.FromString(absPath, infoContent);
+        LoadFromChartData(data);
+    }
+
+    private void LoadFromChartData(ChartData data)
+    {
+        var absPath = data.Root;
+        _chartData = data;
+        // TODO: Read from JSON META
+        BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(_chartData.ImageSource);
+        Music.Stream = (AudioStream)GD.Load(Path.Combine(absPath, _chartData.MusicFileName));
+        SongNameLabel.Text = _chartData.ChartName;
+        DiffLabel.Text = _chartData.ChartDiff;
+
+        var jsonText = File.ReadAllText(Path.Combine(absPath, _chartData.ChartFileName));
+        _chart = JsonConvert.DeserializeObject<ChartRpe>(jsonText);
+        
+        LoadChart();
+    }
+
+    private float _startTime = 0.0f;
+
+    public void HandleRequestResult(long result,long responseCode,string[] headers,byte[] body)
+    {
+        GD.Print("started to process result");
+        var fileData = body;
+        GD.Print($"loaded filedata: {fileData}");
+        // 使用MemoryStream来处理字节数据
+        using var compressedStream = new MemoryStream(fileData);
+        using var archive = new ZipArchive(compressedStream, ZipArchiveMode.Read);
+        var tempPath = Path.Combine(Path.GetTempPath(), "ChartPreviewTemp");
+        GD.Print($"path: {tempPath}");
+        //if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+        Directory.CreateDirectory(tempPath);
+
+        foreach (var entry in archive.Entries)
+        {
+            entry.ExtractToFile(Path.Combine(tempPath, entry.FullName), true);
+        }
+    }
+    public async Task ConnectChartServer(string serverAddr){
+        string filePath = @"C:\Downloads\file.txt";
+        var client = new System.Net.Http.HttpClient();
+        var fileData = await client.GetByteArrayAsync($"{serverAddr}/info.txt");
+        {
+            await File.WriteAllBytesAsync(filePath, fileData);
+        }
+        GD.Print("Started to download...");
+        var theClient = new HttpRequest();
+        theClient.RequestCompleted += HandleRequestResult;
+        theClient.Request(serverAddr);
+    }
+
+    public void LoadChart()
     {
         Vector2 newSize = DisplayServer.WindowGetSize();
         StageSize = new Vector2I((int)(newSize.Y * AspectRatio), (int)newSize.Y);
-
-
         GameModeLabel.Text = IsAutoPlay ? "AUTOPLAY" : "COMBO";
-        var absPath = ProjectSettings.GlobalizePath(dir);
-
-        LoadChart(absPath);
-
+        
         _resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
         var curPack = _resPackManager.CurPack;
         var heInstance = HeScene.Instantiate<AnimatedSprite2D>();
@@ -89,33 +150,16 @@ public partial class ChartManager : Control
         scene.Pack(heInstance);
         HeScene = scene;
 
-        CalcUiSize();
-        PlayChart();
-    }
-
-    public void LoadChart(string rootDir)
-    {
-        string infoPath = Path.Combine(rootDir, "info.txt");
-        string infoContent = File.ReadAllText(infoPath);
-        _chartData = ChartData.FromString(rootDir, infoContent);
-        // TODO: Read from JSON META
-        BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(_chartData.ImageSource);
-        Music.Stream = (AudioStream)GD.Load(Path.Combine(rootDir, _chartData.MusicFileName));
-        SongNameLabel.Text = _chartData.ChartName;
-        DiffLabel.Text = _chartData.ChartDiff;
-
-        string jsonText = File.ReadAllText(Path.Combine(rootDir, _chartData.ChartFileName));
-        _chart = JsonConvert.DeserializeObject<ChartRpe>(jsonText);
         GD.Print(_chart.JudgeLineList.Count);
         // Must be done as initialization
         _chart.PreCalculation();
         foreach (var line in _chart.JudgeLineList)
         {
-            int i = _chart.JudgeLineList.IndexOf(line);
+            var i = _chart.JudgeLineList.IndexOf(line);
             var lineInstance = JudgeLineScene.Instantiate() as JudgeLineNode;
             AddChild(lineInstance);
             lineInstance!.FingerDataList = FingerDataList;
-            lineInstance.Init(_chart, i);
+            lineInstance.Init(_chart, i, IsAutoPlay);
             lineInstance.ZIndex = _chart.JudgeLineList[i].ZOrder;
             lineInstance.AspectRatio = AspectRatio;
             JudgeLineInstances.Add(lineInstance);
@@ -125,6 +169,9 @@ public partial class ChartManager : Control
                 note.OnJudged += JudgedEventHandler;
             }
         }
+        
+        CalcUiSize();
+        PlayChart();
     }
 
     #endregion
@@ -151,24 +198,17 @@ public partial class ChartManager : Control
     {
         realTime = realTime < 0 ? 0 : realTime;
 
-        foreach (var line in JudgeLineInstances)
+        foreach (var noteNode in JudgeLineInstances.SelectMany(line => line.NoteInstances.Where(noteNode => noteNode.State != JudgeState.NotJudged &&
+                     realTime <= noteNode.NoteInfo.StartTime.RealTime)))
         {
-            foreach (var noteNode in line.NoteInstances)
-            {
-                if (noteNode.State != JudgeState.NotJudged && realTime <= noteNode.NoteInfo.StartTime.RealTime)
-                {
-                    if (realTime <= Time) _chart.JudgeData.RevertJudge();
-                    noteNode.State = JudgeState.NotJudged;
-                    noteNode.Visible = true;
-                    noteNode.Head.Visible = true;
-                    if (noteNode.NoteInfo.Type == NoteType.Hold)
-                    {
-                        noteNode.Body.Visible = true;
-                        noteNode.Tail.Visible = true;
-                        noteNode.Modulate = new Color(1, 1, 1);
-                    }
-                }
-            }
+            if (realTime <= Time) _chart.JudgeData.RevertJudge();
+            noteNode.State = JudgeState.NotJudged;
+            noteNode.Visible = true;
+            noteNode.Head.Visible = true;
+            if (noteNode.NoteInfo.Type != NoteType.Hold) continue;
+            noteNode.Body.Visible = true;
+            noteNode.Tail.Visible = true;
+            noteNode.Modulate = new Color(1, 1, 1);
         }
 
         Time = realTime;
@@ -179,17 +219,15 @@ public partial class ChartManager : Control
     {
         PauseUi.Visible = !PauseUi.Visible;
         _chart.JudgeData.RevertJudge();
-        ComboLabel.Text = "0";
-        Combo = 0;
-        ScoreLabel.Text = "0000000";
-        Score = 0;
-        ProgressBar.Value = 0;
         SeekTo(0);
         PlayChart();
     }
-
+    
+    public delegate void OnExitHandler(JudgeManager judgeData);
+    public event OnExitHandler OnExit;
     public void Exit()
     {
+        OnExit?.Invoke(_chart.JudgeData);
         QueueFree();
     }
 
@@ -199,24 +237,32 @@ public partial class ChartManager : Control
 
     public void PlayChart()
     {
+        CalcUiSize();
+        ComboLabel.Text = "0";
+        Combo = 0;
+        ScoreLabel.Text = "0000000";
+        Score = 0;
+        ProgressBar.Value = 0;
+
+
         LabelUi.Size = StageSize + Vector2.One * 400;
         LabelUi.Position = Vector2.One * -200;
 
         GameModeLabel.Visible = false;
         ComboLabel.Visible = false;
         var tween = LabelUi.CreateTween().SetParallel();
-        foreach (JudgeLineNode line in JudgeLineInstances)
+        foreach (var line in JudgeLineInstances)
         {
             var scale = line.CalcScale();
             line.TextureLine.Scale = new Vector2(0, scale.Y);
             tween.TweenProperty(line.TextureLine, "scale", scale, 1.5d).SetEase(Tween.EaseType.InOut)
                 .SetTrans(Tween.TransitionType.Cubic);
-            line.CalcTime(0.0f);
+            line.CalcTime(0.0f, Size);
         }
 
-        tween.TweenProperty(LabelUi, "size", StageSize, 1.0d).SetEase(Tween.EaseType.Out)
+        tween.TweenProperty(LabelUi, "size", StageSize, 1.5d).SetEase(Tween.EaseType.Out)
             .SetTrans(Tween.TransitionType.Quint);
-        tween.TweenProperty(LabelUi, "position", Vector2.Zero, 1.0d).SetEase(Tween.EaseType.Out)
+        tween.TweenProperty(LabelUi, "position", Vector2.Zero, 1.5d).SetEase(Tween.EaseType.Out)
             .SetTrans(Tween.TransitionType.Quint);
         tween.TweenCallback(
             Callable.From
@@ -224,7 +270,7 @@ public partial class ChartManager : Control
             {
                 IsPlaying = true;
                 Music.Play();
-            })).SetDelay(1.0f);
+            })).SetDelay(1.5f);
         tween.Play();
     }
 
@@ -235,6 +281,8 @@ public partial class ChartManager : Control
 
     public override void _Process(double delta)
     {
+        
+        FPSLabel.Text = $"FPS: {(1/delta):0.00}";
         CalcUiSize();
 
         PlaybackTime = Music.GetPlaybackPosition();
@@ -244,10 +292,10 @@ public partial class ChartManager : Control
         {
             Time += delta;
 
-            foreach (JudgeLineNode line in JudgeLineInstances)
+            foreach (var line in JudgeLineInstances)
             {
                 line.ChartJudgeState = _chart.JudgeData.ChartJudgeType;
-                line.CalcTime(Time);
+                line.CalcTime(Time, Size);
             }
 
             ComboLabel.Text = Combo.ToString();
@@ -273,6 +321,9 @@ public partial class ChartManager : Control
             {
                 SeekTo(Time + 5);
             }
+            if (Input.IsKeyPressed(Key.Space)){
+                Pause();
+            }
 
             if (Input.IsActionJustPressed("seek_back"))
             {
@@ -287,13 +338,18 @@ public partial class ChartManager : Control
 
     public void CalcUiSize()
     {
-        Vector2 newSize = DisplayServer.WindowGetSize();
-        StageSize = new Vector2I((int)(newSize.Y * AspectRatio), (int)newSize.Y);
-        if (!newSize.IsEqualApprox(WindowSize))
+        LayoutMode = 1;
+        WindowSize = DisplayServer.WindowGetSize();
+        var pxSize = new Vector2((int)(WindowSize.Y * AspectRatio), (int)WindowSize.Y);
+        var actualSize = pxSize * 648 / WindowSize.Y;
+        Size = actualSize;
+        Position = new Vector2(((WindowSize - pxSize) / 2).X, 0);
+        return;
+        if (!WindowSize.IsEqualApprox(WindowSize))
         {
             foreach (var line in JudgeLineInstances)
             {
-                line.WindowSize = newSize;
+                line.WindowSize = WindowSize;
                 line.StageSize = StageSize;
                 line.CalcScale();
             }
@@ -301,7 +357,7 @@ public partial class ChartManager : Control
 
         WindowSize = DisplayServer.WindowGetSize();
 
-        BackGroundImage.Scale = StageSize / BackGroundImage.Texture.GetSize();
+        BackGroundControl.Scale = StageSize / BackGroundControl.Size;
 
         Size = StageSize;
         Position = (WindowSize - StageSize) / 2;
@@ -313,15 +369,22 @@ public partial class ChartManager : Control
         }
 
         var ratio = StageSize.Y / 648;
-        ScoreLabel.LabelSettings.FontSize = (int)(30 * ratio);
-        ComboLabel.LabelSettings.FontSize = (int)(40 * ratio);
-        GameModeLabel.LabelSettings.FontSize = (int)(20 * ratio);
-        PauseBtn.CustomMinimumSize = Vector2.One * 25 * ratio;
-        LabelUi.AddThemeConstantOverride("margin_top", (int)(25 * ratio));
-        LabelUi.AddThemeConstantOverride("margin_right", (int)(25 * ratio));
-        LabelUi.AddThemeConstantOverride("margin_left", (int)(25 * ratio));
-        LabelUi.AddThemeConstantOverride("margin_bottom", (int)(25 * ratio));
-        ComboUi.AddThemeConstantOverride("margin_top", (int)(15 * ratio));
+        
+        ScoreLabel.LabelSettings.FontSize = (int)(32 * ratio);
+        
+        ComboLabel.LabelSettings.FontSize = (int)(45 * ratio);
+        GameModeLabel.LabelSettings.FontSize = (int)(16 * ratio);
+        
+        PauseBtn.CustomMinimumSize = Vector2.One * 24 * ratio;
+
+        SongNameLabel.LabelSettings.FontSize = (int)(24 * ratio);
+        DiffLabel.LabelSettings.FontSize = (int)(24 * ratio);
+        
+        LabelUi.AddThemeConstantOverride("margin_left", (int)(20 * ratio));
+        LabelUi.AddThemeConstantOverride("margin_top", (int)(19 * ratio));
+        LabelUi.AddThemeConstantOverride("margin_right", (int)(24 * ratio));
+        LabelUi.AddThemeConstantOverride("margin_bottom", (int)(18 * ratio));
+        ComboUi.AddThemeConstantOverride("margin_top", (int)(9 * ratio));
     }
 
     #endregion
@@ -340,7 +403,7 @@ public partial class ChartManager : Control
         public Vector2 CurPos;
         public Vector2 CurVec;
 
-        public FingerData(Vector2 pos = new Vector2(), Vector2 vec = new Vector2())
+        public FingerData(Vector2 pos = new (), Vector2 vec = new ())
         {
             CurPos = pos;
             CurVec = vec;
@@ -349,6 +412,7 @@ public partial class ChartManager : Control
 
     public override void _Input(InputEvent @event)
     {
+        if(IsAutoPlay || IsPlaying) return;
         base._Input(@event);
         switch (@event)
         {
@@ -389,14 +453,11 @@ public partial class ChartManager : Control
                 };
 
                 selected.Note.NoteJudgeType = judgement;
-                selected.Note.EmitOnJudged(selected.Note.NoteJudgeType, selected.Note.NoteInfo.Type);
+                selected.Note.EmitOnJudged();
                 if (selected.Note.NoteInfo.Type == NoteType.Hold)
                 {
-                    selected.Note.State = JudgeState.Holding;
                     return;
                 }
-
-                selected.Note.State = JudgeState.Judged;
                 selected.Note.Visible = false;
                 break;
             }
@@ -414,34 +475,31 @@ public partial class ChartManager : Control
     public static Color PerfectColor = new(0xecebb0e7);
     public static Color GoodColor = new(0xb4e1ffeb);
 
-    public void JudgedEventHandler(Vector2 globalPosition, JudgeType judgeType, NoteType noteType,
-        bool shouldSoundAndRecord = true)
+
+    public void JudgedEventHandler(Vector2 globalPosition, NoteNode instance, bool shouldSoundAndRecord = true)
     {
         if (shouldSoundAndRecord)
         {
-            _chart.JudgeData.Judge(judgeType);
+            _chart.JudgeData.Judge(instance.NoteJudgeType);
         }
 
         Combo = _chart.JudgeData.MaxCombo;
         Score = _chart.JudgeData.CalcScore();
 
-        if (judgeType == JudgeType.Miss) return;
+        if (instance.NoteJudgeType == JudgeType.Miss) return;
 
-        AnimatedSprite2D effectInstance = HeScene.Instantiate<AnimatedSprite2D>();
-        Color color = PerfectColor;
-        switch (judgeType)
+        var effect = HeScene.Instantiate<AnimatedSprite2D>();
+        
+        var color = instance.NoteJudgeType switch
         {
-            case JudgeType.Perfect:
-                color = PerfectColor;
-                break;
-            case JudgeType.Good:
-                color = GoodColor;
-                break;
-        }
+            JudgeType.Perfect => PerfectColor,
+            JudgeType.Good => GoodColor,
+            _ => PerfectColor
+        };
 
         if (shouldSoundAndRecord)
         {
-            switch (noteType)
+            switch (instance.NoteInfo.Type)
             {
                 case NoteType.Tap:
                     TapSfx.Play();
@@ -455,20 +513,21 @@ public partial class ChartManager : Control
                 case NoteType.Drag:
                     DragSfx.Play();
                     break;
+                default:
+                    TapSfx.Play();
+                    break;
             }
         }
-
-        effectInstance.Modulate = color;
-
-
+        
+        effect.Modulate = color;
         var curPack = _resPackManager.CurPack;
-        var scale = 1.5f * curPack.HitFxScale * (StageSize.X * 175 /
-                                                 (1350 * effectInstance.SpriteFrames.GetFrameTexture("default", 0)
+        var scale = 1.5f * curPack.HitFxScale * (Size.X * 175 /
+                                                 (1350 * effect.SpriteFrames.GetFrameTexture("default", 0)
                                                      .GetSize().X));
-        effectInstance.Scale = Vector2.One * scale;
+        effect.Scale = Vector2.One * scale;
 
-        effectInstance.Position = globalPosition - (WindowSize - StageSize) / 2;
-        AddChild(effectInstance);
+        effect.Position = globalPosition - Position;
+        AddChild(effect);
     }
 
     #endregion

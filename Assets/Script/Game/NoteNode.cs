@@ -5,18 +5,22 @@ public partial class NoteNode : Node2D
 {
 	[Export] public Label Label;
 	
-	public delegate void OnJudjedEventHandler(Vector2 globalPosition, JudgeType judgeType, NoteType noteType, bool shouldSound = true);
+	public delegate void OnJudjedEventHandler(Vector2 globalPosition, NoteNode instance, bool shouldSound = true);
 	public event OnJudjedEventHandler OnJudged;
 
-	public void EmitOnJudged(JudgeType judgeType, NoteType noteType, bool shouldSound = true){
+	public void EmitOnJudged(bool shouldSound = true){
 		if (NoteInfo.IsFake == 1) return;
+		if (shouldSound)
+		{
+			State = NoteInfo.Type == NoteType.Hold ? JudgeState.Holding : JudgeState.Judged;
+		}
 		var x = Position.X;
 		var parent = GetParent<JudgeLineNode>();
 		var pos = new Vector2(
 			x * (float)Math.Cos(parent.Rotation),
 			x * (float)Math.Sin(parent.Rotation)
 		) + parent.GlobalPosition;
-		OnJudged?.Invoke(pos, judgeType, noteType, shouldSound);
+		OnJudged?.Invoke(pos,this, shouldSound);
 	}
 
 	public Sprite2D Head;

@@ -5,35 +5,26 @@ using System.Text.Json.Serialization;
 using Godot;
 
 
-
 public class BpmListItem
 {
-    [JsonPropertyName("bpm")]
-    public float Bpm { get; set; }
-    [JsonPropertyName("startTime")]
-    public Time StartTime { get; set; }
+    [JsonPropertyName("bpm")] public float Bpm { get; set; }
+    [JsonPropertyName("startTime")] public Time StartTime { get; set; }
 }
+
 public class Meta
 {
     public int RpeVersion { get; set; }
 
-    [JsonPropertyName("background")]
-    public string Background { get; set; }
-    [JsonPropertyName("charter")]
-    public string Charter { get; set; }
-    [JsonPropertyName("composer")]
-    public string Composer { get; set; }
-    [JsonPropertyName("id")]
-    public string Id { get; set; }
-    [JsonPropertyName("level")]
-    public string Difficulty { get; set; }
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-    [JsonPropertyName("offset")]
-    public int Offset { get; set; }
-    [JsonPropertyName("song")]
-    public string MusicFileName { get; set; }
+    [JsonPropertyName("background")] public string Background { get; set; }
+    [JsonPropertyName("charter")] public string Charter { get; set; }
+    [JsonPropertyName("composer")] public string Composer { get; set; }
+    [JsonPropertyName("id")] public string Id { get; set; }
+    [JsonPropertyName("level")] public string Difficulty { get; set; }
+    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("offset")] public int Offset { get; set; }
+    [JsonPropertyName("song")] public string MusicFileName { get; set; }
 }
+
 public class AlphaControlItem
 {
     public AlphaControlItem(float xx)
@@ -42,16 +33,23 @@ public class AlphaControlItem
         Easing = 1;
         X = xx;
     }
-    [JsonPropertyName("alpha")]
-    public float Alpha { get; set; }
-    [JsonPropertyName("easing")]
-    public int Easing { get; set; }
-    [JsonPropertyName("x")]
-    public float X { get; set; }
+
+    [JsonPropertyName("alpha")] public float Alpha { get; set; }
+    [JsonPropertyName("easing")] public int Easing { get; set; }
+    [JsonPropertyName("x")] public float X { get; set; }
 }
+
 public class RpeEvent
 {
-    public double GetCurVal(double t)
+    public short RelativeDist(double time)
+    {
+        if (StartTime <= time && time <= EndTime) return 0;
+        if (EndTime < time) return 1;
+        if (time < StartTime) return -1;
+        return -1;
+    }
+
+    public double Eval(double t)
     {
         if (t > StartTime && t < EndTime)
         {
@@ -67,33 +65,23 @@ public class RpeEvent
         return End;
     }
 
-    [JsonPropertyName("bezier")]
-    public int Bezier { get; set; } = 0;
+    [JsonPropertyName("bezier")] public int Bezier { get; set; } = 0;
 
     [JsonPropertyName("bezierPoints")]
     public BezierPoints BezierPoints { get; set; } = new() { 0.0f, 0.0f, 0.0f, 0.0f };
 
-    [JsonPropertyName("easingLeft")]
-    public float EasingLeft { get; set; } = 0;
+    [JsonPropertyName("easingLeft")] public float EasingLeft { get; set; } = 0;
 
-    [JsonPropertyName("easingRight")]
-    public float EasingRight { get; set; } = 1;
+    [JsonPropertyName("easingRight")] public float EasingRight { get; set; } = 1;
 
-    [JsonPropertyName("easingType")]
-    public int EasingType { get; set; }
-    [JsonPropertyName("end")]
-    public float End { get; set; }
-    [JsonPropertyName("endTime")]
-    public Time EndTime { get; set; }
-    [JsonPropertyName("linkgroup")]
-    public int LinkGroup { get; set; } = 0;
+    [JsonPropertyName("easingType")] public int EasingType { get; set; }
+    [JsonPropertyName("end")] public float End { get; set; }
+    [JsonPropertyName("endTime")] public Time EndTime { get; set; }
+    [JsonPropertyName("linkgroup")] public int LinkGroup { get; set; } = 0;
 
-    [JsonPropertyName("start")]
-    public float Start { get; set; }
-    [JsonPropertyName("startTime")]
-    public Time StartTime { get; set; }
+    [JsonPropertyName("start")] public float Start { get; set; }
+    [JsonPropertyName("startTime")] public Time StartTime { get; set; }
 }
-
 
 
 /// <summary>
@@ -101,7 +89,6 @@ public class RpeEvent
 /// </summary>
 public class BezierPoints : List<float>
 {
-
 }
 
 
@@ -114,6 +101,7 @@ public class Time : List<int>, IComparable
     {
         return (int)(this - (Time)b);
     }
+
     public double AsDouble()
     {
         return this[2] == 0 ? 0 : this[0] + (this[1] / (double)this[2]);
@@ -130,7 +118,6 @@ public class Time : List<int>, IComparable
     /// <param name="value">拍数的小数</param>
     public static explicit operator Time(double value)
     {
-
         int wholePart = (int)value;
         double fractionPart = value - wholePart;
         int numerator = (int)Math.Round(fractionPart * 1000000);
@@ -144,38 +131,34 @@ public class Time : List<int>, IComparable
 
         return new Time { wholePart, numerator, denominator };
     }
+
     private static int GetGcd(int a, int b)
     {
         return b == 0 ? a : GetGcd(b, a % b);
     }
 
-    [JsonIgnore]
-    public double RealTime;
+    [JsonIgnore] public double RealTime;
 }
 
 
 public class RpeSpeedEvent
 {
-    [JsonPropertyName("end")]
-    public float End { get; set; }
-    [JsonPropertyName("endTime")]
-    public Time EndTime { get; set; }
+    [JsonPropertyName("end")] public float End { get; set; }
+    [JsonPropertyName("endTime")] public Time EndTime { get; set; }
 
-    [JsonPropertyName("linkgroup")]
-    public int LinkGroup { get; set; }
-    [JsonPropertyName("start")]
-    public float Start { get; set; }
-    [JsonPropertyName("startTime")]
-    public Time StartTime { get; set; }
+    [JsonPropertyName("linkgroup")] public int LinkGroup { get; set; }
+    [JsonPropertyName("start")] public float Start { get; set; }
+    [JsonPropertyName("startTime")] public Time StartTime { get; set; }
 
-    [JsonIgnore]
-    public double FloorPosition;
-
+    [JsonIgnore] public double FloorPosition;
 }
 
 public class EventList : List<RpeEvent>
 {
-    public EventList() { }
+    public EventList()
+    {
+    }
+
     public EventList(bool withBase = false)
     {
         if (withBase)
@@ -190,35 +173,80 @@ public class EventList : List<RpeEvent>
             });
         }
     }
-    [JsonIgnore]
-    public int CurAt { get; set; } = -1;
+
+    [JsonIgnore] public RpeEvent CurrentEvent { get; set; } = null;
+
     /// <summary>
     /// 计算拍数对应的事件值
     /// </summary>
     /// <param name="time">当前拍数</param>
     /// <returns></returns>
-    public double GetValByTime(double time)
+    public double Eval(double time)
     {
-
-        foreach (RpeEvent e in this)
+        var left = 0;
+        var right = 0;
+        
+        if (Count == 0) return 0;
+        CurrentEvent ??= this[0];
+        var i = IndexOf(CurrentEvent);
+        var result = CurrentEvent.RelativeDist(time);
+        if (result == 0) return CurrentEvent.Eval(time);
+        if (result > 0)
         {
-            var i = IndexOf(e);
-            double nextEnd = i == Count - 1 ? 99999.0d : this[i + 1].StartTime;
-
-            if (time >= e.StartTime && time <= nextEnd)
+            if (i >= Count - 1 || this[i + 1].StartTime > time)
             {
-                return e.GetCurVal(time);
+                return CurrentEvent.Eval(time);
+            }
+
+            if (i + 2 < Count && this[i + 2].StartTime > time)
+            {
+                CurrentEvent = this[i + 1];
+                return CurrentEvent.Eval(time);
+            }
+    
+            left = i;
+            right = Count - 1;
+        }
+        else
+        {
+            left = 0;
+            right = i;
+        }
+
+        
+
+        while (left <= right)
+        {
+            var mid = (left + right) / 2;
+            var midEvent = this[mid];
+
+            if (time >= midEvent.StartTime && (mid >= Count - 1 || time < this[mid + 1].StartTime))
+            {
+                CurrentEvent = midEvent;
+                return midEvent.Eval(time);
+            }
+            if (time < midEvent.StartTime)
+            {
+                right = mid - 1;
+            }
+            else
+            {
+                left = mid + 1;
             }
         }
-        return 0;
+
+        return CurrentEvent.Eval(time);
     }
+
 }
 
 
 public class SpeedEventList : List<RpeSpeedEvent>
 {
+    public SpeedEventList()
+    {
+    }
 
-    public SpeedEventList() { }
     public SpeedEventList(bool withBase = false)
     {
         if (withBase)
@@ -232,6 +260,7 @@ public class SpeedEventList : List<RpeSpeedEvent>
             });
         }
     }
+
     public void CalcFloorPosition()
     {
         foreach (RpeSpeedEvent lastEvent in this)
@@ -247,9 +276,8 @@ public class SpeedEventList : List<RpeSpeedEvent>
 
 
             curEvent.FloorPosition +=
-            lastEvent.FloorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
-            lastEvent.End * (curStartTime - lastEndTime) / 1;
-
+                lastEvent.FloorPosition + (lastEvent.End + lastEvent.Start) * (lastEndTime - lastStartTime) / 2 +
+                lastEvent.End * (curStartTime - lastEndTime) / 1;
         }
     }
 
@@ -283,14 +311,14 @@ public class SpeedEventList : List<RpeSpeedEvent>
             }
 
             if (Count - 1 != i && !(time <= this[i + 1].StartTime.RealTime)) continue;
-            floorPosition += speedEvent.FloorPosition + (speedEvent.End + speedEvent.Start) * (endTime - startTime) / 2 +
+            floorPosition += speedEvent.FloorPosition +
+                             (speedEvent.End + speedEvent.Start) * (endTime - startTime) / 2 +
                              speedEvent.End * (time - endTime) / 1;
             break;
         }
 
         return floorPosition;
     }
-
 }
 
 
@@ -316,14 +344,15 @@ public class EventLayer
     [field: JsonIgnore]
     public SpeedEventList SpeedEvents { get; set; }
 }
+
 public class EventLayerList : List<EventLayer>
 {
     /// <summary>
-	/// 获取时间范围内速度积分
-	/// </summary>
-	/// <param name="time"></param>
-	/// <returns>单位：屏幕高度</returns>
-	public double GetCurSu(double time)
+    /// 获取时间范围内速度积分
+    /// </summary>
+    /// <param name="time"></param>
+    /// <returns>单位：屏幕高度</returns>
+    public double GetCurSu(double time)
     {
         return this.Sum(layer => layer.SpeedEvents.GetCurTimeSu(time));
     }
@@ -347,6 +376,7 @@ public class Extended
             defaultInc
         };
     }
+
     public EventList InclineEvents { get; set; }
 }
 
@@ -360,6 +390,7 @@ public class NoteEndTimeComparer : Comparer<RpeNote>
         return 0;
     }
 }
+
 public class NoteStartTimeComparer : Comparer<RpeNote>
 {
     public override int Compare(RpeNote x, RpeNote y)
@@ -378,39 +409,28 @@ public enum NoteType
     Flick = 3,
     Drag = 4,
 }
+
 public class RpeNote
 {
-    [JsonPropertyName("above")]
-    public int Above { get; set; }
-    [JsonPropertyName("alpha")]
-    public int Alpha { get; set; }
-    [JsonPropertyName("endTime")]
-    public Time EndTime { get; set; }
-    [JsonPropertyName("isFake")]
-    public int IsFake { get; set; }
-    [JsonPropertyName("positionX")]
-    public float PositionX { get; set; }
-    [JsonPropertyName("size")]
-    public float Size { get; set; }
-    [JsonPropertyName("speed")]
-    public float Speed { get; set; }
-    [JsonPropertyName("startTime")]
-    public Time StartTime { get; set; }
-    [JsonPropertyName("type")]
-    public NoteType Type { get; set; }
-    [JsonPropertyName("visibleTime")]
-    public float VisibleTime { get; set; }
-    [JsonPropertyName("yOffset")]
-    public float YOffset { get; set; }
+    [JsonPropertyName("above")] public int Above { get; set; }
+    [JsonPropertyName("alpha")] public int Alpha { get; set; }
+    [JsonPropertyName("endTime")] public Time EndTime { get; set; }
+    [JsonPropertyName("isFake")] public int IsFake { get; set; }
+    [JsonPropertyName("positionX")] public float PositionX { get; set; }
+    [JsonPropertyName("size")] public float Size { get; set; }
+    [JsonPropertyName("speed")] public float Speed { get; set; }
+    [JsonPropertyName("startTime")] public Time StartTime { get; set; }
+    [JsonPropertyName("type")] public NoteType Type { get; set; }
+    [JsonPropertyName("visibleTime")] public float VisibleTime { get; set; }
+    [JsonPropertyName("yOffset")] public float YOffset { get; set; }
 
-    [JsonIgnore]
-    public double FloorPosition;
-    [JsonIgnore]
-    public double TopPosition;
-    [JsonIgnore]
-    public bool IsHighLight;
+    [JsonIgnore] public double FloorPosition;
+    [JsonIgnore] public double TopPosition;
+    [JsonIgnore] public bool IsHighLight;
 }
-public enum JudgeState{
+
+public enum JudgeState
+{
     NotJudged,
     Holding,
     Judged,
@@ -425,13 +445,12 @@ public class PosControlItem
         Easing = 1;
         X = xx;
     }
-    [JsonPropertyName("easing")]
-    public int Easing { get; set; }
-    [JsonPropertyName("pos")]
-    public float Pos { get; set; }
-    [JsonPropertyName("x")]
-    public float X { get; set; }
+
+    [JsonPropertyName("easing")] public int Easing { get; set; }
+    [JsonPropertyName("pos")] public float Pos { get; set; }
+    [JsonPropertyName("x")] public float X { get; set; }
 }
+
 public class SizeControlItem
 {
     public SizeControlItem(float xx)
@@ -440,13 +459,12 @@ public class SizeControlItem
         Easing = 1;
         X = xx;
     }
-    [JsonPropertyName("easing")]
-    public int Easing { get; set; }
-    [JsonPropertyName("size")]
-    public float Size { get; set; }
-    [JsonPropertyName("x")]
-    public float X { get; set; }
+
+    [JsonPropertyName("easing")] public int Easing { get; set; }
+    [JsonPropertyName("size")] public float Size { get; set; }
+    [JsonPropertyName("x")] public float X { get; set; }
 }
+
 public class SkewControlItem
 {
     public SkewControlItem(float xx)
@@ -455,13 +473,12 @@ public class SkewControlItem
         Easing = 1;
         X = xx;
     }
-    [JsonPropertyName("easing")]
-    public int Easing { get; set; }
-    [JsonPropertyName("skew")]
-    public float Skew { get; set; }
-    [JsonPropertyName("x")]
-    public float X { get; set; }
+
+    [JsonPropertyName("easing")] public int Easing { get; set; }
+    [JsonPropertyName("skew")] public float Skew { get; set; }
+    [JsonPropertyName("x")] public float X { get; set; }
 }
+
 public class YControlItem
 {
     public YControlItem(float xx)
@@ -470,45 +487,31 @@ public class YControlItem
         Easing = 1;
         X = xx;
     }
-    [JsonPropertyName("easing")]
-    public int Easing { get; set; }
-    [JsonPropertyName("y")]
-    public float Y { get; set; }
-    [JsonPropertyName("x")]
-    public float X { get; set; }
+
+    [JsonPropertyName("easing")] public int Easing { get; set; }
+    [JsonPropertyName("y")] public float Y { get; set; }
+    [JsonPropertyName("x")] public float X { get; set; }
 }
+
 public class JudgeLineJson
 {
     public int Group { get; set; }
     public string Name { get; set; }
     public string Texture { get; set; }
 
-    [JsonPropertyName("alphaControl")]
-    public List<AlphaControlItem> AlphaControl { get; set; }
-    [JsonPropertyName("bpmfactor")]
-    public float BpmFactor { get; set; }
-    [JsonPropertyName("eventLayers")]
-    public EventLayerList EventLayers { get; set; }
-    [JsonPropertyName("extended")]
-    public Extended Extended { get; set; }
-    [JsonPropertyName("father")]
-    public int Father { get; set; }
-    [JsonPropertyName("isCover")]
-    public int IsCover { get; set; }
-    [JsonPropertyName("notes")]
-    public List<RpeNote> Notes { get; set; }
-    [JsonPropertyName("numOfNotes")]
-    public int NumOfNotes { get; set; }
-    [JsonPropertyName("posControl")]
-    public List<PosControlItem> PosControl { get; set; }
-    [JsonPropertyName("sizeControl")]
-    public List<SizeControlItem> SizeControl { get; set; }
-    [JsonPropertyName("skewControl")]
-    public List<SkewControlItem> SkewControl { get; set; }
-    [JsonPropertyName("yControl")]
-    public List<YControlItem> YControl { get; set; }
-    [JsonPropertyName("zOrder")]
-    public int ZOrder { get; set; }
+    [JsonPropertyName("alphaControl")] public List<AlphaControlItem> AlphaControl { get; set; }
+    [JsonPropertyName("bpmfactor")] public float BpmFactor { get; set; }
+    [JsonPropertyName("eventLayers")] public EventLayerList EventLayers { get; set; }
+    [JsonPropertyName("extended")] public Extended Extended { get; set; }
+    [JsonPropertyName("father")] public int Father { get; set; }
+    [JsonPropertyName("isCover")] public int IsCover { get; set; }
+    [JsonPropertyName("notes")] public List<RpeNote> Notes { get; set; }
+    [JsonPropertyName("numOfNotes")] public int NumOfNotes { get; set; }
+    [JsonPropertyName("posControl")] public List<PosControlItem> PosControl { get; set; }
+    [JsonPropertyName("sizeControl")] public List<SizeControlItem> SizeControl { get; set; }
+    [JsonPropertyName("skewControl")] public List<SkewControlItem> SkewControl { get; set; }
+    [JsonPropertyName("yControl")] public List<YControlItem> YControl { get; set; }
+    [JsonPropertyName("zOrder")] public int ZOrder { get; set; }
 }
 
 public static class EnumerableExtended
@@ -518,6 +521,7 @@ public static class EnumerableExtended
         return source ?? Enumerable.Empty<T>();
     }
 }
+
 public enum JudgeType
 {
     Perfect,
@@ -572,12 +576,13 @@ public class JudgeManager
     public int CalcScore()
     {
         return (int)
-                (
-                1000000 *
-                ((0.1d * MaxCombo / NoteSum) +
-                0.9d * GetAcc())
-                );
+        (
+            1000000 *
+            ((0.1d * MaxCombo / NoteSum) +
+             0.9d * GetAcc())
+        );
     }
+
     public void RevertJudge()
     {
         MaxCombo = 0;
@@ -602,14 +607,11 @@ public class ChartRpe
     public List<BpmListItem> BpmList;
 
     public Meta Meta { get; set; }
-    [JsonPropertyName("judgeLineGroup")]
-    public List<string> JudgeLineGroup { get; set; }
-    [JsonPropertyName("judgeLineList")]
-    public List<JudgeLineJson> JudgeLineList { get; set; }
+    [JsonPropertyName("judgeLineGroup")] public List<string> JudgeLineGroup { get; set; }
+    [JsonPropertyName("judgeLineList")] public List<JudgeLineJson> JudgeLineList { get; set; }
 
 
-    [JsonIgnore]
-    public JudgeManager JudgeData = new();
+    [JsonIgnore] public JudgeManager JudgeData = new();
 
     public ChartRpe(List<BpmListItem> bpmList)
     {
@@ -621,7 +623,6 @@ public class ChartRpe
     /// </summary>
     public void PreCalculation()
     {
-
         var allNotes = new List<RpeNote>();
         foreach (var line in JudgeLineList)
         {
@@ -633,6 +634,7 @@ public class ChartRpe
                 note.EndTime.RealTime = BeatTime2RealTime(note.EndTime);
                 allNotes.Add(note);
             }
+
             foreach (var layer in line.EventLayers.OrEmptyIfNull())
             {
                 layer.SpeedEvents  ??= new SpeedEventList(true);
@@ -647,6 +649,7 @@ public class ChartRpe
                     e.StartTime.RealTime = BeatTime2RealTime(e.StartTime);
                     e.EndTime.RealTime = BeatTime2RealTime(e.EndTime);
                 }
+
                 layer.SpeedEvents.CalcFloorPosition();
             }
 
@@ -659,10 +662,10 @@ public class ChartRpe
                 }
             }
         }
+
         allNotes.Sort(new NoteStartTimeComparer());
         foreach (var curNote in allNotes)
         {
-
             var i = allNotes.IndexOf(curNote);
             if
             (
@@ -711,8 +714,8 @@ public class ChartRpe
                 break;
             }
         }
-        return secondSum;
 
+        return secondSum;
     }
 
     /// <summary>
@@ -736,7 +739,6 @@ public class ChartRpe
         }
 
 
-
         double second = 0.0;
         double last = 0.0;
         foreach (double t in bpmSeconds)
@@ -748,8 +750,10 @@ public class ChartRpe
                 var curBpmInfo = BpmList[bpmSeconds.IndexOf(t)];
                 return (timeInBpmRange * curBpmInfo.Bpm / 60) + curBpmInfo.StartTime;
             }
+
             last = second;
         }
+
         return 0;
     }
 }

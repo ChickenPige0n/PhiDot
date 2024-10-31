@@ -32,13 +32,15 @@ public partial class JudgeLineNode : Sprite2D
 	public double AspectRatio = 1.666667d;
 
 
+	private bool _isAutoPlay; 
 	private float _noteJudgeSize = 100;
 	public List<ChartManager.FingerData> FingerDataList;
 
 
 	private double _chartTime;
-	public void CalcTime(double realTime)
+	public void CalcTime(double realTime, Vector2 stageSize)
 	{
+		StageSize = stageSize;
 		var a = _chart.RealTime2BeatTime(realTime);
 		var dChartTime = a - _chartTime;
 		_chartTime = a;
@@ -52,10 +54,10 @@ public partial class JudgeLineNode : Sprite2D
 
 		foreach (var layer in eventLayers)
 		{
-			xPos += layer.MoveXEvents.GetValByTime(_chartTime);
-			yPos += layer.MoveYEvents.GetValByTime(_chartTime);
-			alpha += layer.AlphaEvents.GetValByTime(_chartTime);
-			rotate += layer.RotateEvents.GetValByTime(_chartTime);
+			xPos += layer.MoveXEvents.Eval(_chartTime);
+			yPos += layer.MoveYEvents.Eval(_chartTime);
+			alpha += layer.AlphaEvents.Eval(_chartTime);
+			rotate += layer.RotateEvents.Eval(_chartTime);
 		}
 
 		Position = ChartRpe.RpePos2PixelPos(new Vector2((float)xPos, (float)yPos), StageSize) + (StageSize / 2);
@@ -72,50 +74,61 @@ public partial class JudgeLineNode : Sprite2D
 
 
 
-		foreach (var instance in NoteInstances)
+		foreach (var noteObject in NoteInstances)
 		{
-			var note = instance.NoteInfo;
+			var note = noteObject.NoteInfo;
 
+			if (_isAutoPlay && _chartTime > note.StartTime && noteObject.State == JudgeState.NotJudged)
+			{
+				noteObject.NoteJudgeType = JudgeType.Perfect;
+				noteObject.EmitOnJudged();
+			}
+			
 			if (_chartTime > note.EndTime)
 			{
-				instance.Visible = false;
-				if (instance.NoteJudgeType == JudgeType.Perfect && instance.State == JudgeState.Judged && instance.NoteInfo.Type >= NoteType.Flick)
+				noteObject.Visible = false;
+				if (noteObject.NoteJudgeType == JudgeType.Perfect && noteObject.State == JudgeState.Judged && noteObject.NoteInfo.Type >= NoteType.Flick)
 				{
-					instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
-					instance.State = JudgeState.Dead;
+					noteObject.EmitOnJudged();
+					noteObject.State = JudgeState.Dead;
 				}
-				else if (instance.State == JudgeState.NotJudged && realTime - note.StartTime.RealTime >= ChartManager.BadRange)
+				else if (noteObject.State == JudgeState.NotJudged && realTime - note.StartTime.RealTime >= ChartManager.BadRange)
 				{
-					instance.NoteJudgeType = JudgeType.Miss;
-					instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
-					instance.State = JudgeState.Judged;
+					noteObject.NoteJudgeType = JudgeType.Miss;
+					noteObject.EmitOnJudged();
 				}
 				continue;
 			}
 			var eventLayerList = _chart.JudgeLineList[_lineIndex].EventLayers;
 			var newY = StageSize.Y / 7.5f * note.Speed * (float)(eventLayerList.GetCurSu(realTime) - note.FloorPosition);
+            const float eps = 0.01f;
+            noteObject.Visible = !(newY > -eps && noteObject.NoteInfo.Type != NoteType.Hold);
+			
 			newY = note.Above == 1 ? newY : -newY;
-			instance.Position = new Vector2(instance.Position.X, realTime >= note.StartTime.RealTime ? 0 : newY);
+			
+			noteObject.Position = new Vector2(noteObject.Position.X, realTime >= note.StartTime.RealTime ? 0 : newY);
+
+			
 			if (note.Type == NoteType.Hold)
 			{
-				if (realTime >= note.StartTime.RealTime && realTime <= note.EndTime.RealTime && instance.State == JudgeState.Holding)
+				if (realTime >= note.StartTime.RealTime && realTime <= note.EndTime.RealTime && noteObject.State == JudgeState.Holding)
 				{
-					instance.UntouchTimer += GetProcessDeltaTime();
+					noteObject.UntouchTimer += GetProcessDeltaTime();
 
-					GD.Print($"Type: {instance.UntouchTimer}");
 
-					if (instance.UntouchTimer > HoldMissTime)
+					if (!_isAutoPlay && noteObject.UntouchTimer > HoldMissTime)
 					{
-						instance.State = JudgeState.Judged;
-						instance.NoteJudgeType = JudgeType.Miss;
-						instance.Modulate = new Color(1, 1, 1, .5f);
-						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type);
+						noteObject.State = JudgeState.Judged;
+						noteObject.NoteJudgeType = JudgeType.Miss;
+						noteObject.Modulate = new Color(1, 1, 1, .5f);
+						noteObject.EmitOnJudged();
 					}
-					instance.HoldTimer += dChartTime;
-					if (instance.HoldTimer > 0.5f)
+					noteObject.HoldTimer += dChartTime;
+					if (noteObject.HoldTimer > 0.5f)
 					{
-						instance.EmitOnJudged(instance.NoteJudgeType, instance.NoteInfo.Type, false);
-						instance.HoldTimer = 0;
+						GD.Print($"Emit once");
+						noteObject.EmitOnJudged(false);
+						noteObject.HoldTimer = 0;
 					}
 				}
 
@@ -124,30 +137,31 @@ public partial class JudgeLineNode : Sprite2D
 
 				if (_chartTime >= note.StartTime)
 				{
-					instance.Head.Visible = false;
+					
+					noteObject.Head.Visible = false;
 				}
 
-				instance.Body.Scale = new Vector2(instance.Body.Scale.X, (instance.Position.Y - end) / instance.Body.Texture.GetSize().Y);
-				instance.Tail.Position = new Vector2(0, end - instance.Position.Y);
+				noteObject.Body.Scale = new Vector2(noteObject.Body.Scale.X, (noteObject.Position.Y - end) / noteObject.Body.Texture.GetSize().Y);
+				noteObject.Tail.Position = new Vector2(0, end - noteObject.Position.Y);
 			}
 
 
-			if (instance.NoteInfo.Type == NoteType.Tap) continue;
+			if (noteObject.NoteInfo.Type == NoteType.Tap) continue;
 
 			foreach (var fingerData in FingerDataList)
 			{
 				var pos = ((fingerData.CurPos * GetCanvasTransform()) - GlobalPosition).Rotated(-Rotation);
-				var dt = Math.Abs(realTime - instance.NoteInfo.StartTime.RealTime);
-				var dx = Math.Abs(instance.Position.X - pos.X);
-				if (instance.State == JudgeState.Judged || !(dx < _noteJudgeSize)) continue;
-				if (instance.NoteInfo.Type == NoteType.Hold)
+				var dt = Math.Abs(realTime - noteObject.NoteInfo.StartTime.RealTime);
+				var dx = Math.Abs(noteObject.Position.X - pos.X);
+				if (noteObject.State == JudgeState.Judged || !(dx < _noteJudgeSize)) continue;
+				if (noteObject.NoteInfo.Type == NoteType.Hold)
 				{
-					instance.UntouchTimer = 0;
+					noteObject.UntouchTimer = 0;
 					continue;
 				}
-				if (dt < ChartManager.GoodRange && (instance.NoteInfo.Type == NoteType.Drag || fingerData.CurVec.Length() >= 180))
+				if (dt < ChartManager.GoodRange && (noteObject.NoteInfo.Type == NoteType.Drag || fingerData.CurVec.Length() >= 180))
 				{
-					instance.State = JudgeState.Judged;
+					noteObject.State = JudgeState.Judged;
 				}
 			}
 		}
@@ -173,11 +187,11 @@ public partial class JudgeLineNode : Sprite2D
 		return new Vector2(newScale, newScale);
 	}
 
-	public void Init(ChartRpe chart, int lineIndex)
+	public void Init(ChartRpe chart, int lineIndex, bool isAutoPlay)
 	{
 		_chart = chart;
 		_lineIndex = lineIndex;
-
+		_isAutoPlay = isAutoPlay;
 
 		var resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
 		_curPack = resPackManager.CurPack;
@@ -226,7 +240,7 @@ public partial class JudgeLineNode : Sprite2D
 			AddChild(instance);
 		}
 
-		CalcTime(0);
+		CalcTime(0, StageSize);
 		foreach (var note in NoteInstances)
 		{
 			note.Visible = true;
