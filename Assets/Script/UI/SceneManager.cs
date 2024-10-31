@@ -242,13 +242,13 @@ public partial class SceneManager : Node2D
 	
 
 	[Export] public LineEdit AddressEdit;
-	public void OnConnectRemote()
+	public async void OnConnectRemote()
 	{
 		var scene = GameScene.Instantiate<ChartManager>();
 		scene.OnExit += GameExited;
 		scene.Visible = false;
 		GetNode("/root").AddChild(scene);
-		scene.ConnectChartServer(AddressEdit.Text);
+		await scene.ConnectChartServer(AddressEdit.Text);
 		scene.Visible = true;
 	}
 

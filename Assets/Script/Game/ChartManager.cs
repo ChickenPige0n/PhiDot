@@ -11,10 +11,11 @@ using Newtonsoft.Json;
 using Color = Godot.Color;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+using System.Security.Authentication;
 
 public partial class ChartManager : Control
 {
-    public bool IsAutoPlay = true;
+    public bool IsAutoPlay = false;
 
     private ResPackManager _resPackManager;
 
@@ -40,6 +41,8 @@ public partial class ChartManager : Control
     [Export] public TextureRect BackGroundImage;
 
     [Export] public ProgressBar ProgressBar;
+    
+    [Export] public HSlider ProgressControl;
 
     [Export] public Control PauseUi;
 
@@ -91,48 +94,77 @@ public partial class ChartManager : Control
         var absPath = data.Root;
         _chartData = data;
         // TODO: Read from JSON META
-        BackGroundImage.Texture = (Texture2D)GD.Load<Texture>(_chartData.ImageSource);
-        Music.Stream = (AudioStream)GD.Load(Path.Combine(absPath, _chartData.MusicFileName));
+
+        var image = new Image();
+        image.Load(_chartData.ImageSource);
+        BackGroundImage.Texture = ImageTexture.CreateFromImage(image);
+
+        static AudioStreamMP3 LoadMP3(string path)
+        {
+            using var file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+            var sound = new AudioStreamMP3();
+            sound.Data = file.GetBuffer((long)file.GetLength());
+            return sound;
+        }
+        
+        Music.Stream = LoadMP3(Path.Combine(absPath, _chartData.MusicFileName));
         SongNameLabel.Text = _chartData.ChartName;
         DiffLabel.Text = _chartData.ChartDiff;
 
         var jsonText = File.ReadAllText(Path.Combine(absPath, _chartData.ChartFileName));
         _chart = JsonConvert.DeserializeObject<ChartRpe>(jsonText);
-        
+
         LoadChart();
     }
 
     private float _startTime = 0.0f;
 
-    public void HandleRequestResult(long result,long responseCode,string[] headers,byte[] body)
+    public async Task ConnectChartServer(string serverAddr)
     {
-        GD.Print("started to process result");
-        var fileData = body;
-        GD.Print($"loaded filedata: {fileData}");
-        // 使用MemoryStream来处理字节数据
-        using var compressedStream = new MemoryStream(fileData);
-        using var archive = new ZipArchive(compressedStream, ZipArchiveMode.Read);
+        HttpClientHandler clientHandler = new HttpClientHandler();
+        clientHandler.ServerCertificateCustomValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };
+        clientHandler.SslProtocols = SslProtocols.None;
+        var client = new System.Net.Http.HttpClient(clientHandler);
         var tempPath = Path.Combine(Path.GetTempPath(), "ChartPreviewTemp");
-        GD.Print($"path: {tempPath}");
-        //if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+        try
+        {
+            Directory.Delete(tempPath, true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting temp folder: {ex.Message}");
+        }
         Directory.CreateDirectory(tempPath);
 
-        foreach (var entry in archive.Entries)
+        async Task downloadFile(string fileName)
         {
-            entry.ExtractToFile(Path.Combine(tempPath, entry.FullName), true);
+            try
+            {
+                GD.Print($"Downloading {fileName} from http://{serverAddr}/{fileName}");
+                var fileData = await client.GetByteArrayAsync($"http://{serverAddr}/{fileName}");
+                {
+                    GD.Print($"Saving file to {tempPath}");
+                    await File.WriteAllBytesAsync(Path.Combine(tempPath, fileName), fileData);
+                }
+                GD.Print("Complete!");
+            }
+            catch (Exception ex)
+            {
+                GD.Print($"Error downloading file: {ex.Message}\nQuitting...");
+                QueueFree();
+            }
         }
-    }
-    public async Task ConnectChartServer(string serverAddr){
-        string filePath = @"C:\Downloads\file.txt";
-        var client = new System.Net.Http.HttpClient();
-        var fileData = await client.GetByteArrayAsync($"{serverAddr}/info.txt");
-        {
-            await File.WriteAllBytesAsync(filePath, fileData);
-        }
-        GD.Print("Started to download...");
-        var theClient = new HttpRequest();
-        theClient.RequestCompleted += HandleRequestResult;
-        theClient.Request(serverAddr);
+
+        await downloadFile("info.txt");
+
+        var infoPath = Path.Combine(tempPath, "info.txt");
+        var infoContent = File.ReadAllText(infoPath);
+        var data = ChartData.FromString(tempPath, infoContent);
+
+        await downloadFile(data.ChartFileName);
+        await downloadFile(data.MusicFileName);
+        await downloadFile(data.ImageFileName);
+        LoadFromChartData(data);
     }
 
     public void LoadChart()
@@ -140,7 +172,7 @@ public partial class ChartManager : Control
         Vector2 newSize = DisplayServer.WindowGetSize();
         StageSize = new Vector2I((int)(newSize.Y * AspectRatio), (int)newSize.Y);
         GameModeLabel.Text = IsAutoPlay ? "AUTOPLAY" : "COMBO";
-        
+
         _resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
         var curPack = _resPackManager.CurPack;
         var heInstance = HeScene.Instantiate<AnimatedSprite2D>();
@@ -169,7 +201,7 @@ public partial class ChartManager : Control
                 note.OnJudged += JudgedEventHandler;
             }
         }
-        
+
         CalcUiSize();
         PlayChart();
     }
@@ -181,7 +213,7 @@ public partial class ChartManager : Control
     public void Pause()
     {
         IsPlaying = !IsPlaying;
-        PauseUi.Visible = !PauseUi.Visible;
+        PauseUi.Visible = !IsPlaying;
         if (IsPlaying)
         {
             Music.Play();
@@ -190,6 +222,7 @@ public partial class ChartManager : Control
         else
         {
             Music.Stop();
+            ProgressControl.Value = ProgressBar.Value;
         }
     }
 
@@ -203,6 +236,8 @@ public partial class ChartManager : Control
         {
             if (realTime <= Time) _chart.JudgeData.RevertJudge();
             noteNode.State = JudgeState.NotJudged;
+            noteNode.NoteJudgeType = JudgeType.Perfect;
+            noteNode.UntouchTimer = 0;
             noteNode.Visible = true;
             noteNode.Head.Visible = true;
             if (noteNode.NoteInfo.Type != NoteType.Hold) continue;
@@ -211,8 +246,15 @@ public partial class ChartManager : Control
             noteNode.Modulate = new Color(1, 1, 1);
         }
 
+        foreach (var line in JudgeLineInstances)
+        {
+            line.CalcTime(Time, Size);
+        }
         Time = realTime;
         Music.Seek((float)realTime);
+    }
+    public void SeekToRatio(double r){
+        SeekTo(Music.Stream.GetLength() * r);
     }
 
     public void Restart()
@@ -222,7 +264,7 @@ public partial class ChartManager : Control
         SeekTo(0);
         PlayChart();
     }
-    
+
     public delegate void OnExitHandler(JudgeManager judgeData);
     public event OnExitHandler OnExit;
     public void Exit()
@@ -281,8 +323,8 @@ public partial class ChartManager : Control
 
     public override void _Process(double delta)
     {
-        
-        FPSLabel.Text = $"FPS: {(1/delta):0.00}";
+
+        FPSLabel.Text = $"FPS: {(1 / delta):0.00}";
         CalcUiSize();
 
         PlaybackTime = Music.GetPlaybackPosition();
@@ -317,18 +359,19 @@ public partial class ChartManager : Control
         // Time Control
         //if (IsAutoPlay)
         //{
-            if (Input.IsActionJustPressed("seek_forward"))
-            {
-                SeekTo(Time + 5);
-            }
-            if (Input.IsKeyPressed(Key.Space)){
-                Pause();
-            }
+        if (Input.IsActionJustPressed("seek_forward"))
+        {
+            SeekTo(Time + 5);
+        }
+        if (Input.IsKeyPressed(Key.Space))
+        {
+            Pause();
+        }
 
-            if (Input.IsActionJustPressed("seek_back"))
-            {
-                SeekTo(Time - 5);
-            }
+        if (Input.IsActionJustPressed("seek_back"))
+        {
+            SeekTo(Time - 5);
+        }
         //}
     }
 
@@ -369,17 +412,17 @@ public partial class ChartManager : Control
         }
 
         var ratio = StageSize.Y / 648;
-        
+
         ScoreLabel.LabelSettings.FontSize = (int)(32 * ratio);
-        
+
         ComboLabel.LabelSettings.FontSize = (int)(45 * ratio);
         GameModeLabel.LabelSettings.FontSize = (int)(16 * ratio);
-        
+
         PauseBtn.CustomMinimumSize = Vector2.One * 24 * ratio;
 
         SongNameLabel.LabelSettings.FontSize = (int)(24 * ratio);
         DiffLabel.LabelSettings.FontSize = (int)(24 * ratio);
-        
+
         LabelUi.AddThemeConstantOverride("margin_left", (int)(20 * ratio));
         LabelUi.AddThemeConstantOverride("margin_top", (int)(19 * ratio));
         LabelUi.AddThemeConstantOverride("margin_right", (int)(24 * ratio));
@@ -403,7 +446,7 @@ public partial class ChartManager : Control
         public Vector2 CurPos;
         public Vector2 CurVec;
 
-        public FingerData(Vector2 pos = new (), Vector2 vec = new ())
+        public FingerData(Vector2 pos = new(), Vector2 vec = new())
         {
             CurPos = pos;
             CurVec = vec;
@@ -412,7 +455,7 @@ public partial class ChartManager : Control
 
     public override void _Input(InputEvent @event)
     {
-        if(IsAutoPlay || IsPlaying) return;
+        if (IsAutoPlay || !IsPlaying) return;
         base._Input(@event);
         switch (@event)
         {
@@ -420,47 +463,47 @@ public partial class ChartManager : Control
                 FingerDataList.RemoveAt(touch.Index);
                 return;
             case InputEventScreenTouch touch:
-            {
-                FingerDataList.Add(new FingerData(touch.Position));
+                {
+                    FingerDataList.Add(new FingerData(touch.Position));
 
 
-                var selected = JudgeLineInstances
-                    .Select(line => new
-                    {
-                        line,
-                        LocalTouchPos = (touch.Position - line.GlobalPosition).Rotated(-line.Rotation)
-                    })
-                    .SelectMany(
-                        data => data.line.NoteInstances,
-                        (data, note) =>
+                    var selected = JudgeLineInstances
+                        .Select(line => new
                         {
-                            var dt = Math.Abs(Time - note.NoteInfo.StartTime.RealTime);
-                            var dx = Math.Abs(note.Position.X - data.LocalTouchPos.X);
-                            return new { Note = note, dx, dt };
+                            line,
+                            LocalTouchPos = (touch.Position - line.GlobalPosition).Rotated(-line.Rotation)
                         })
-                    .Where(it =>
-                        (int)it.Note.NoteInfo.Type <= 2 && it.Note.State != JudgeState.Judged &&
-                        it.dt < BadRange &&
-                        it.dx < _noteJudgeSize)
-                    .MinBy(it => it.dx);
+                        .SelectMany(
+                            data => data.line.NoteInstances,
+                            (data, note) =>
+                            {
+                                var dt = Math.Abs(Time - note.NoteInfo.StartTime.RealTime);
+                                var dx = Math.Abs(note.Position.X - data.LocalTouchPos.X);
+                                return new { Note = note, dx, dt };
+                            })
+                        .Where(it =>
+                            (int)it.Note.NoteInfo.Type <= 2 && it.Note.State != JudgeState.Judged &&
+                            it.dt < BadRange &&
+                            it.dx < _noteJudgeSize)
+                        .MinBy(it => it.dx);
 
-                if (selected is null) return;
-                var judgement = selected.dt switch
-                {
-                    < PerfectRange => JudgeType.Perfect,
-                    < GoodRange => JudgeType.Good,
-                    _ => JudgeType.Bad
-                };
+                    if (selected is null) return;
+                    var judgement = selected.dt switch
+                    {
+                        < PerfectRange => JudgeType.Perfect,
+                        < GoodRange => JudgeType.Good,
+                        _ => JudgeType.Bad
+                    };
 
-                selected.Note.NoteJudgeType = judgement;
-                selected.Note.EmitOnJudged();
-                if (selected.Note.NoteInfo.Type == NoteType.Hold)
-                {
-                    return;
+                    selected.Note.NoteJudgeType = judgement;
+                    selected.Note.EmitOnJudged();
+                    if (selected.Note.NoteInfo.Type == NoteType.Hold)
+                    {
+                        return;
+                    }
+                    selected.Note.Visible = false;
+                    break;
                 }
-                selected.Note.Visible = false;
-                break;
-            }
             case InputEventScreenDrag dragEvent:
                 FingerDataList[dragEvent.Index].CurPos += dragEvent.Relative;
                 FingerDataList[dragEvent.Index].CurVec = dragEvent.Velocity;
@@ -489,7 +532,7 @@ public partial class ChartManager : Control
         if (instance.NoteJudgeType == JudgeType.Miss) return;
 
         var effect = HeScene.Instantiate<AnimatedSprite2D>();
-        
+
         var color = instance.NoteJudgeType switch
         {
             JudgeType.Perfect => PerfectColor,
@@ -518,7 +561,7 @@ public partial class ChartManager : Control
                     break;
             }
         }
-        
+
         effect.Modulate = color;
         var curPack = _resPackManager.CurPack;
         var scale = 1.5f * curPack.HitFxScale * (Size.X * 175 /

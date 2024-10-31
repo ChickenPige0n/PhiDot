@@ -57,9 +57,9 @@ public partial class NoteNode : Node2D
 	}
 
 	
-       public double HoldTimer = 0;
+    public double HoldTimer = 0;
 	public double UntouchTimer = 0;
-       public JudgeState State;
+    public JudgeState State;
 	public JudgeType NoteJudgeType = JudgeType.Perfect;
 
 

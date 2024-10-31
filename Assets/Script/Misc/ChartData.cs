@@ -6,6 +6,7 @@ public class ChartData
 {
     //曲绘绝对路径
     public string ImageSource { get; private set; }
+    public string ImageFileName { get; private set; }
     public string MusicFileName { get; private set; }
     public string ChartFileName { get; private set; }
     
@@ -23,6 +24,7 @@ public class ChartData
     private ChartData()
 	{
 	    ImageSource   = string.Empty;
+	    ImageFileName = string.Empty;
 	    MusicFileName = string.Empty;
 	    ChartFileName = string.Empty;
 	    ChartName     = string.Empty;
@@ -51,6 +53,7 @@ public class ChartData
                     break;
                 case "Picture":
                     cd.ImageSource = Path.Combine(rootDir,infos[1].Trim());
+                    cd.ImageFileName = infos[1].Trim();
                     break;
                 case "Level":
                     cd.ChartDiff = infos[1].Trim();
