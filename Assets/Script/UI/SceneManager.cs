@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Godot;
+using WebSocketSharp;
+using FileAccess = Godot.FileAccess;
 
 public partial class SceneManager : Node2D
 {
@@ -14,7 +16,10 @@ public partial class SceneManager : Node2D
 	[Export] private Label _composerLabel;
 	[Export] private HSlider _slider;
 	[Export] private TextureRect _bgTexture;
-
+	[Export] private CheckButton _autoPlayButton;
+	
+	[Export] public AspectRatioContainer GameContainer;
+	
 	private int _i;
 	private int CurIndex
 	{
@@ -78,17 +83,48 @@ public partial class SceneManager : Node2D
 		}
 	}
 	
+	public void AddChartDisplay(DirAccess chartDir)
+	{
+		var element = new ChartDisplayElement(chartDir);
+		_listControl.AddChild(element);
+		_displayList.Add(element);
+		CurIndex = 0;
+	}
 
 	public override void _Ready()
 	{
+		
+		OS.RequestPermission("android.permission.READ_EXTERNAL_STORAGE");
+		OS.RequestPermission("android.permission.WRITE_EXTERNAL_STORAGE");
+		OS.RequestPermissions();
+		OS.RequestPermission("android.permission.READ_EXTERNAL_STORAGE");
+		OS.RequestPermission("android.permission.WRITE_EXTERNAL_STORAGE");
+		
 		Engine.MaxFps = 144;
-		var charts = Directory.GetDirectories("D:\\Projects\\godot\\godot\\PhiGodot\\Assets\\ExampleChart");
-		foreach (var chart in charts)
+		DirAccess.Open("user://").MakeDir("Charts");
+		
+		using var dir = DirAccess.Open("user://Charts");
+		if (dir != null)
 		{
-			if(!File.Exists(Path.Combine(chart, "info.txt"))) continue;
-			var element = new ChartDisplayElement(chart);
-			_listControl.AddChild(element);
-			_displayList.Add(element);
+			dir.ListDirBegin();
+			var fileName = dir.GetNext();
+			while (fileName != "")
+			{
+				if (!dir.CurrentIsDir())
+				{
+					fileName = dir.GetNext();
+					continue;
+				}
+				var data = FileAccess.Open($"user://Charts/{fileName}/info.txt", FileAccess.ModeFlags.Read);
+				if (data == null)
+				{
+					fileName = dir.GetNext();
+					continue;
+				}
+				AddChartDisplay(DirAccess.Open($"user://Charts/{fileName}"));
+				fileName = dir.GetNext();
+			}
+			dir.ListDirEnd();
 		}
 		_slider.MaxValue = _displayList.Count - 1;
 		_slider.ValueChanged += value => CurIndex = (int)Math.Round(value);
@@ -99,17 +135,20 @@ public partial class SceneManager : Node2D
 	private partial class ChartDisplayElement : TextureRect
 	{
 		public ChartData Data;
-		public ChartDisplayElement(string path)
+		public ChartDisplayElement(DirAccess chartDir)
 		{
-			var ratio = 1.0f;//DisplayServer.WindowGetSize().Y / 648.0f;
+			var ratio = 1.0f;  //DisplayServer.WindowGetSize().Y / 648.0f;
 			var normalSize = new Vector2(280f, 280 * 1.77778f) * ratio * 0.64f;
 
 			Size = normalSize;
 			ExpandMode = ExpandModeEnum.IgnoreSize;
 			StretchMode = StretchModeEnum.KeepAspectCovered;
-			Data = ChartData.FromString(path, File.ReadAllText(Path.Combine(path, "info.txt")));
+			
+			GD.Print($"Loading ChartData from {chartDir.GetCurrentDir()}");
+			var infoContent = FileAccess.Open($"{chartDir.GetCurrentDir()}/info.txt", FileAccess.ModeFlags.Read).GetAsText();
+			Data = ChartData.FromString(chartDir, infoContent);
             //ResourceLoader.LoadThreadedRequest(Data.ImageSource);
-            Texture = (Texture2D)GD.Load<Texture>(Data.ImageSource);
+            Texture = ImageTexture.CreateFromImage(Image.LoadFromFile(Data.ImageSource));
 		}
 
 		public override void _Process(double delta)
@@ -130,14 +169,16 @@ public partial class SceneManager : Node2D
 			};
 			Position = new Vector2(Position.X, (float)x(Position.X));
 
-			float SizeFunc(float x)
-			{
-				if (x > lb && x <= eps) return (float)Easings.EaseInOutCubic((x - lb) / -lb) * 0.36f + 0.64f;
-				if (x < rb && x >= -eps) return (1.0f - (float)Easings.EaseInOutCubic(x / rb)) * 0.36f + 0.64f;
-				return 0.64f;
-			}
-			Size = SizeFunc(Position.X) * selectedSize;
 			
+			Size = SizeFunc(Position.X) * selectedSize;
+			return;
+			
+			float SizeFunc(float sizeX)
+            {
+            	if (sizeX > lb && sizeX <= eps) return (float)Easings.EaseInOutCubic((sizeX - lb) / -lb) * 0.36f + 0.64f;
+            	if (sizeX < rb && sizeX >= -eps) return (1.0f - (float)Easings.EaseInOutCubic(sizeX / rb)) * 0.36f + 0.64f;
+            	return 0.64f;
+            }
 
 		}
 	}
@@ -184,6 +225,7 @@ public partial class SceneManager : Node2D
 				break;
 			case "Android":
 				GD.Print("Android");
+				// path = "/storage/emulated/0/";草你妈怎么拿权限啊妈个逼的
 				path = "/storage/emulated/0/";
 				break;
 			case "iOS":
@@ -194,19 +236,17 @@ public partial class SceneManager : Node2D
 				break;
 		}
 
-		if (loadType.Contains("chart"))
-		{
-			ChartSelected(_displayList[CurIndex].Data.Root);
-			_bgTexture.Visible = false;
-			_uiControl.Visible = false;
-			return;
-		}
+		//path = OS.GetSystemDir(OS.SystemDir.Downloads);
+		OS.RequestPermissions();
+		OS.RequestPermission("android.permission.READ_EXTERNAL_STORAGE");
+		OS.RequestPermission("android.permission.WRITE_EXTERNAL_STORAGE");
 		FileDialog fd = new()
 		{
 			Size = new Vector2I(900, 600),
 			CurrentDir = path,
 			Access = FileDialog.AccessEnum.Filesystem
 		};
+		//_diffLabel.Text = $"using path:{path}";
 		AddChild(fd);
 		fd.Popup();
 		fd.FileMode = FileDialog.FileModeEnum.OpenDir;
@@ -222,19 +262,76 @@ public partial class SceneManager : Node2D
 		resPackManager.SetCurPack(resPackManager.ResPackList.Count - 1);
 	}
 
-	
-
-	public void ChartSelected(string path)
+	public void LoadSelectedChart()
 	{
 		var scene = GameScene.Instantiate<ChartManager>();
+		scene.IsAutoPlay = _autoPlayButton.ButtonPressed;
 		scene.OnExit += GameExited;
-		GetNode("/root").AddChild(scene);
-		path = ProjectSettings.GlobalizePath(path);
-		scene.LoadFromDir(path);
+		GameContainer.AddChild(scene);
+		scene.LoadFromDir(_displayList[CurIndex].Data.Root);
+		_bgTexture.Visible = false;
+		_uiControl.Visible = false;
+		GameContainer.Visible = true;
+	}
+	public void DelSelectedChart()
+	{
+		var path = _displayList[CurIndex].Data.Root;
+		_displayList[CurIndex].QueueFree();
+		_displayList.RemoveAt(CurIndex);
+		CurIndex--; // refresh layout
+		path.ListDirBegin();
+		var fileName = path.GetNext();
+		while (fileName != "")
+		{
+			var err = path.Remove(fileName);
+			if (err != Error.Ok)
+			{
+				GD.Print($"Remove file error:\n  {err.ToString()}");
+			}
+			fileName = path.GetNext();
+		}
+
+		var dir = DirAccess.Open("user://Charts"); // can't find a better way to get parent directory
+		var error = dir.Remove(path.GetCurrentDir().GetFile());
+		if (error != Error.Ok)
+		{
+			GD.Print($"Remove dir error:\n  {error.ToString()}");
+		}
+		// path.Remove()
+	}
+
+	
+
+	public void ChartSelected(string dir)
+	{
+		var originDir = DirAccess.Open(dir);
+		var dirName = originDir.GetCurrentDir().GetFile(); // Yes directory is considered as a file here.
+		DirAccess.Open("user://Charts").MakeDir(dirName);
+		var destDir = DirAccess.Open($"user://Charts/{dirName}");
+		originDir.ListDirBegin();
+		var fileName = originDir.GetNext();
+		while (!fileName.IsNullOrEmpty())
+		{
+			if (originDir.CurrentIsDir())
+			{
+				fileName = originDir.GetNext();
+				continue;
+			}
+			GD.Print($"Copying file {originDir.GetCurrentDir()}/{fileName} to {destDir.GetCurrentDir()}/{fileName}");
+			var err = originDir.Copy($"{originDir.GetCurrentDir()}/{fileName}", $"{destDir.GetCurrentDir()}/{fileName}");
+			if (err != Error.Ok)
+			{
+				GD.Print($"import copy failed, error:\n    {err}");
+			}
+			fileName = originDir.GetNext();
+		}
+		originDir.ListDirEnd();
+		AddChartDisplay(DirAccess.Open($"{destDir.GetCurrentDir()}/{fileName}"));
 	}
 
 	public void GameExited(JudgeManager judgeData)
 	{
+		GameContainer.Visible = false;
 		_bgTexture.Visible = true;
 		_uiControl.Visible = true;
 	}
@@ -245,9 +342,10 @@ public partial class SceneManager : Node2D
 	public async void OnConnectRemote()
 	{
 		var scene = GameScene.Instantiate<ChartManager>();
+		scene.IsAutoPlay = _autoPlayButton.ButtonPressed;
 		scene.OnExit += GameExited;
 		scene.Visible = false;
-		GetNode("/root").AddChild(scene);
+		GameContainer.AddChild(scene);
 		await scene.ConnectChartServer(AddressEdit.Text);
 		scene.Visible = true;
 	}

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Godot;
 
 
 public class ChartData
@@ -19,7 +20,7 @@ public class ChartData
 
     public string Illustrator { get; set; }
     
-    public string Root { get; set; }
+    public DirAccess Root { get; set; }
 
     private ChartData()
 	{
@@ -33,16 +34,18 @@ public class ChartData
 	    Composer      = string.Empty;
 	    Charter       = string.Empty;
 	    Illustrator   = string.Empty;
-        Root          = string.Empty;
+        Root          = null;
     }
-    public static ChartData FromString(string rootDir, string infoContent)
+    public static ChartData FromString(DirAccess rootDir, string infoContent)
     {
-    	ChartData cd = new ChartData();
-        cd.Root = rootDir;
-        string[] lines = infoContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (string line in lines)
+    	var cd = new ChartData
         {
-            string[] infos = line.Split(new[] { ':' });
+            Root = rootDir
+        };
+        var lines = infoContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var infos = line.Split(new[] { ':' });
             switch (infos[0].Trim())
             {
                 case "Name":
@@ -52,7 +55,7 @@ public class ChartData
                     cd.ChartPath = infos[1].Trim();
                     break;
                 case "Picture":
-                    cd.ImageSource = Path.Combine(rootDir,infos[1].Trim());
+                    cd.ImageSource = $"{rootDir.GetCurrentDir()}/{infos[1].Trim()}";
                     cd.ImageFileName = infos[1].Trim();
                     break;
                 case "Level":

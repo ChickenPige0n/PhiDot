@@ -2,6 +2,7 @@ shader_type canvas_item;
 
 uniform int kernel_size : hint_range(1, 160) = 5;
 uniform float sigma : hint_range(0.1, 50.0) = 2.0;
+uniform float dim : hint_range(0.0, 1.0, 0.01) = .7;
 
 float gaussian(int x, float sigmaa) {
     return exp(-float(x*x) / (2.0 * sigmaa * sigmaa));
@@ -20,5 +21,5 @@ void fragment() {
         weight_sum += weight;
     }
 
-    COLOR.rgb = color / weight_sum;
+    COLOR.rgb = dim * (color / weight_sum);
 }

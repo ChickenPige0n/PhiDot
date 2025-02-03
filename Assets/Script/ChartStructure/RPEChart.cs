@@ -53,6 +53,7 @@ public class RpeEvent
     {
         if (t > StartTime && t < EndTime)
         {
+            if (EasingType > 28 || EasingType < 0) EasingType = 0;
             var easeResult = Easings.EaseFunctions[EasingType]((t - StartTime) / (EndTime - StartTime));
             return (Start * (1 - easeResult)) + (End * easeResult);
         }

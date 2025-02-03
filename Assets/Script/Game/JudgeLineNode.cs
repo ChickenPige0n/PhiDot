@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PhiGodot.Assets.Script.ResourcePack;
 using Godot;
 
 public partial class JudgeLineNode : Sprite2D
@@ -126,7 +127,7 @@ public partial class JudgeLineNode : Sprite2D
 					noteObject.HoldTimer += dChartTime;
 					if (noteObject.HoldTimer > 0.5f)
 					{
-						GD.Print($"Emit once");
+						// GD.Print($"Emit once");
 						noteObject.EmitOnJudged(false);
 						noteObject.HoldTimer = 0;
 					}
@@ -196,8 +197,6 @@ public partial class JudgeLineNode : Sprite2D
 		var resPackManager = GetNode<ResPackManager>("/root/ResPackManager");
 		_curPack = resPackManager.CurPack;
 
-		WindowSize = DisplayServer.WindowGetSize();
-		StageSize = new Vector2I((int)(WindowSize.Y * AspectRatio), (int)WindowSize.Y);
 		CalcScale();
 
 		TextureLine.Modulate = new(0xecebb0e7);

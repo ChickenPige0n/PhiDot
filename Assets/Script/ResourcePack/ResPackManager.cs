@@ -1,33 +1,41 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PhiGodot.Assets.Script.ResourcePack;
 using Godot;
 using YamlDotNet.Serialization;
+using FileAccess = Godot.FileAccess;
 
 public partial class ResPackManager : Node
 {
-    public ResPack CurPack { get; private set; }
+    [Export] public ResPack CurPack { get; private set; }
     public List<ResPackInfo> ResPackList { get; } = new();
 
     public override void _Ready()
     {
-        var absPath = ProjectSettings.GlobalizePath("res://Assets/ResPacks");
-        foreach (var dir in Directory.EnumerateDirectories(absPath))
-        {
-            LoadFromDir(dir);
-        }
-        CurPack = new ResPack(ResPackList[0]);
+        // GD.Print("Loading ResPacks from res://Assets/ResPacks");
+        // var absPath = DirAccess.Open("res://Assets/ResPacks");
+        // foreach (var dir in absPath.GetDirectories())
+        // {
+        //     GD.Print($"Loading respack from {dir}");
+        //     LoadFromDir($"{absPath.GetCurrentDir()}/{dir}");
+        // }
+        // 
+        CurPack = GD.Load<ResPack>("res://Assets/Script/ResourcePack/Official.tres");
+        //CurPack.HoldTexture = CurPack.HoldTexture;
+        //CurPack.HoldHlTexture = CurPack.HoldHlTexture;
+        CurPack.HitEffectTexture = CurPack.HitEffectTexture;
     }
 
     public void LoadFromDir(string dir)
     {
-        var infoPath = Path.Combine(dir, "info.yml");
+        var infoPath = $"{dir}/info.yml";
 
-        if (!File.Exists(infoPath)) return;
+        if (!FileAccess.FileExists(infoPath)) return;
         var deserializer = new DeserializerBuilder().Build();
         try
         {
-            var info = deserializer.Deserialize<ResPackInfo>(File.ReadAllText(infoPath));
+            var info = deserializer.Deserialize<ResPackInfo>(FileAccess.Open(infoPath, FileAccess.ModeFlags.Read).GetAsText());
             info.DirPath = dir;
             ResPackList.Add(info);
         }
@@ -71,116 +79,3 @@ public class ResPackInfo
 
 }
 
-
-public class ResPack
-{
-    public readonly Texture2D TapTexture;
-    public readonly Texture2D FlickTexture;
-    public readonly Texture2D DragTexture;
-    public (Texture2D head, Texture2D body, Texture2D tail) HoldTextures;
-
-
-
-    public readonly Texture2D TapHlTexture;
-    public readonly Texture2D FlickHlTexture;
-    public readonly Texture2D DragHlTexture;
-    public (Texture2D head, Texture2D body, Texture2D tail) HoldHlTextures;
-
-
-    public readonly SpriteFrames HitEffectFrames;
-
-
-    public AudioStream TapSound;
-    public AudioStream FlickSound;
-    public AudioStream DragSound;
-
-    public readonly float HitFxScale = 1.0f;
-
-
-
-    private static SpriteFrames GetHeFrames(AtlasTexture heTexture, (int line, int column) heInfo)
-    {
-        var frames = new SpriteFrames();
-        var size = heTexture.Atlas.GetSize();
-
-        var fWidth = (int)(size.X / heInfo.column);
-        var fHeight = (int)(size.Y / heInfo.line);
-
-        frames.ClearAll();
-        for (var i = 0; i < heInfo.line; i++)
-        {
-            for (var j = 0; j < heInfo.column; j++)
-            {
-                var frame = (AtlasTexture)heTexture.Duplicate(true);
-                frame.Region = new Rect2(j * fWidth, i * fHeight, fWidth, fHeight);
-                frames.AddFrame("default", frame);
-            }
-        }
-        frames.SetAnimationSpeed("default", heInfo.line * heInfo.column * 2);
-        return frames;
-    }
-
-    private static (Texture2D head, Texture2D body, Texture2D tail) GetHoldTexture(AtlasTexture holdTexture, (int head, int tail) info)
-    {
-
-        var size = holdTexture.Atlas.GetSize();
-        var head = (AtlasTexture)holdTexture.Duplicate(true);
-        var body = (AtlasTexture)holdTexture.Duplicate(true);
-        var tail = (AtlasTexture)holdTexture.Duplicate(true);
-
-        head.Region = new Rect2(0, size.Y - info.head, size.X, info.head);
-        body.Region = new Rect2(0, info.tail, size.X, size.Y - info.head - info.tail);
-        tail.Region = new Rect2(0, 0, size.X, info.tail);
-
-        return (head, body, tail);
-    }
-
-    public ResPack(ResPackInfo info)
-    {
-        try
-        {
-            TapTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "click.png"));
-            FlickTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "flick.png"));
-            DragTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "drag.png"));
-            var holdTexture2D = GD.Load<Texture2D>(Path.Combine(info.DirPath, "hold.png"));
-
-            var texture = new AtlasTexture
-            {
-                Atlas = holdTexture2D
-            };
-            HoldTextures = GetHoldTexture(texture, (head: info.HoldAtlas[1], tail: info.HoldAtlas[0]));
-
-            TapHlTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "click_mh.png"));
-            FlickHlTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "flick_mh.png"));
-            DragHlTexture = GD.Load<Texture2D>(Path.Combine(info.DirPath, "drag_mh.png"));
-
-            texture = new AtlasTexture
-            {
-                Atlas = GD.Load<Texture2D>(Path.Combine(info.DirPath, "hold_mh.png"))
-            };
-
-            HoldHlTextures = GetHoldTexture(texture, (head: info.HoldAtlasMh[1], tail: info.HoldAtlasMh[0]));
-
-            texture = new AtlasTexture
-            {
-                Atlas = GD.Load<Texture2D>(Path.Combine(info.DirPath, "hit_fx.png"))
-            };
-            HitEffectFrames = GetHeFrames(texture, (line: info.HitFx[1], column: info.HitFx[0]));
-
-            TapSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "click.ogg"));
-            FlickSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "flick.ogg"));
-            DragSound = GD.Load<AudioStream>(Path.Combine(info.DirPath, "drag.ogg"));
-
-            HitFxScale = info.HitFxScale;
-
-        }
-        catch (IOException e)
-        {
-            GD.Print(e.StackTrace);
-        }
-
-    }
-
-
-
-}
