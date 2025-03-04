@@ -13,6 +13,7 @@ public partial class NoteNode : Node2D
 		if (shouldSound)
 		{
 			State = NoteInfo.Type == NoteType.Hold ? JudgeState.Holding : JudgeState.Judged;
+			Head.Visible = NoteInfo.Type == NoteType.Hold;
 		}
 		var x = Position.X;
 		var parent = GetParent<JudgeLineNode>();
