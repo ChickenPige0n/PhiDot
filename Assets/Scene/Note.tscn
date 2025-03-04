@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://q0ardap0o4oc"]
 
-[ext_resource type="Script" path="res://Assets/Script/Game/NoteNode.cs" id="1_3qjq2"]
+[ext_resource type="Script" uid="uid://dl1k706c30dw2" path="res://Assets/Script/Game/NoteNode.cs" id="1_3qjq2"]
 
 [node name="Note" type="Node2D" node_paths=PackedStringArray("Label")]
 script = ExtResource("1_3qjq2")

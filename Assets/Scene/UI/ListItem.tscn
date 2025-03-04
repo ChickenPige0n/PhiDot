@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://cvdt8hhriva25"]
 
 [ext_resource type="Texture2D" uid="uid://dgs7lc2pmq27w" path="res://Assets/Image/InfoMask.png" id="1_r4bsy"]
-[ext_resource type="Script" path="res://Assets/Script/UI/InfoLine.cs" id="2_l5r08"]
+[ext_resource type="Script" uid="uid://dwrbj57ifbwi8" path="res://Assets/Script/UI/InfoLine.cs" id="2_l5r08"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_tqo77"]
 font_size = 25

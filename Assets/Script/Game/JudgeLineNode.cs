@@ -114,10 +114,10 @@ public partial class JudgeLineNode : Sprite2D
 			{
 				if (realTime >= note.StartTime.RealTime && realTime <= note.EndTime.RealTime && noteObject.State == JudgeState.Holding)
 				{
-					noteObject.UntouchTimer += GetProcessDeltaTime();
+					noteObject.FingerUpTimer += GetProcessDeltaTime();
 
 
-					if (!_isAutoPlay && noteObject.UntouchTimer > HoldMissTime)
+					if (!_isAutoPlay && noteObject.FingerUpTimer > HoldMissTime)
 					{
 						noteObject.State = JudgeState.Judged;
 						noteObject.NoteJudgeType = JudgeType.Miss;
@@ -151,13 +151,13 @@ public partial class JudgeLineNode : Sprite2D
 
 			foreach (var fingerData in FingerDataList)
 			{
-				var pos = ((fingerData.CurPos * GetCanvasTransform()) - GlobalPosition).Rotated(-Rotation);
+				var pos = (fingerData.CurPos * GetCanvasTransform() - GlobalPosition).Rotated(-Rotation);
 				var dt = Math.Abs(realTime - noteObject.NoteInfo.StartTime.RealTime);
 				var dx = Math.Abs(noteObject.Position.X - pos.X);
 				if (noteObject.State == JudgeState.Judged || !(dx < _noteJudgeSize)) continue;
 				if (noteObject.NoteInfo.Type == NoteType.Hold)
 				{
-					noteObject.UntouchTimer = 0;
+					noteObject.FingerUpTimer = 0;
 					continue;
 				}
 				if (dt < ChartManager.GoodRange && (noteObject.NoteInfo.Type == NoteType.Drag || fingerData.CurVec.Length() >= 180))

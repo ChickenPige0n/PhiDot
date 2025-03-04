@@ -31,7 +31,7 @@
 [ext_resource type="Texture2D" uid="uid://cr1fhxlg0abpb" path="res://Assets/Image/Materials/HitEffect/img-29.png" id="29_wq7xu"]
 [ext_resource type="Texture2D" uid="uid://dp5tfvpsej6em" path="res://Assets/Image/Materials/HitEffect/img-30.png" id="30_axk71"]
 [ext_resource type="Texture2D" uid="uid://b638lyqpqf7s5" path="res://Assets/Image/Materials/HitEffect/HitParticle.bmp" id="31_6muro"]
-[ext_resource type="Script" path="res://Assets/Scene/HitEffect.cs" id="31_60fw0"]
+[ext_resource type="Script" uid="uid://cvqqa2dwr8pa1" path="res://Assets/Scene/HitEffect.cs" id="31_60fw0"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_k1qi2"]
 animations = [{
@@ -196,7 +196,7 @@ tracks/1/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_6a6q1"]
 _data = {
-"Particle": SubResource("Animation_ui37g")
+&"Particle": SubResource("Animation_ui37g")
 }
 
 [node name="HitEffect" type="AnimatedSprite2D"]
@@ -210,15 +210,15 @@ script = ExtResource("31_60fw0")
 [node name="GPUParticles2D" type="GPUParticles2D" parent="."]
 emitting = false
 amount = 4
-process_material = SubResource("ParticleProcessMaterial_eebwi")
 texture = ExtResource("31_6muro")
 lifetime = 0.5
 one_shot = true
 explosiveness = 1.0
 fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_eebwi")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_6a6q1")
+&"": SubResource("AnimationLibrary_6a6q1")
 }
 autoplay = "Particle"

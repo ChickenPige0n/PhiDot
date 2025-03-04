@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net;
 using Godot;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Color = Godot.Color;
-using WebSocketSharp;
-using WebSocketSharp.Server;
 using System.Security.Authentication;
 using System.Threading;
 using FileAccess = Godot.FileAccess;
@@ -30,7 +26,7 @@ public partial class ChartManager : Control
 
     #region UIReferences
 
-    [Export] public Label FPSLabel;
+    [Export] public Label FpsLabel;
     [Export] public Label ScoreLabel;
     public int Score;
     [Export] public Label SongNameLabel;
@@ -142,7 +138,7 @@ public partial class ChartManager : Control
     LoadChart();
 }
 
-private float _startTime = 0.0f;
+private float _startTime;
 
 /// <summary>
 /// TODO: Use User:// instead of C# provided file IO
@@ -152,7 +148,7 @@ public async Task ConnectChartServer(string serverAddr)
 {
     HttpClientHandler clientHandler = new HttpClientHandler();
     clientHandler.ServerCertificateCustomValidationCallback +=
-        (sender, cert, chain, sslPolicyErrors) => { return true; };
+        (_, _, _, _) => true;
     clientHandler.SslProtocols = SslProtocols.None;
     var client = new System.Net.Http.HttpClient(clientHandler);
     var tempPath = Path.Combine(Path.GetTempPath(), "ChartPreviewTemp");
@@ -167,7 +163,20 @@ public async Task ConnectChartServer(string serverAddr)
 
     Directory.CreateDirectory(tempPath);
 
-    async Task downloadFile(string fileName)
+    await DownloadFile("info.txt");
+
+    var infoPath = Path.Combine(tempPath, "info.txt");
+    var infoContent = await File.ReadAllTextAsync(infoPath);
+    var t = DirAccess.Open(tempPath);
+    var data = ChartData.FromString(t, infoContent);
+
+    await DownloadFile(data.ChartFileName);
+    await DownloadFile(data.MusicFileName);
+    await DownloadFile(data.ImageFileName);
+    LoadFromChartData(data);
+    return;
+
+    async Task DownloadFile(string fileName)
     {
         try
         {
@@ -185,18 +194,6 @@ public async Task ConnectChartServer(string serverAddr)
             QueueFree();
         }
     }
-
-    await downloadFile("info.txt");
-
-    var infoPath = Path.Combine(tempPath, "info.txt");
-    var infoContent = File.ReadAllText(infoPath);
-    var t = DirAccess.Open(tempPath);
-    var data = ChartData.FromString(t, infoContent);
-
-    await downloadFile(data.ChartFileName);
-    await downloadFile(data.MusicFileName);
-    await downloadFile(data.ImageFileName);
-    LoadFromChartData(data);
 }
 
 public void LoadChart()
@@ -273,7 +270,7 @@ public void SeekTo(double realTime)
         if (realTime <= Time) _chart.JudgeData.RevertJudge();
         noteNode.State = JudgeState.NotJudged;
         noteNode.NoteJudgeType = JudgeType.Perfect;
-        noteNode.UntouchTimer = 0;
+        noteNode.FingerUpTimer = 0;
         noteNode.Visible = true;
         noteNode.Head.Visible = true;
         if (noteNode.NoteInfo.Type != NoteType.Hold) continue;
@@ -365,7 +362,7 @@ public void PlayChart()
 
 public override void _Process(double delta)
 {
-    FPSLabel.Text = $"FPS: {(1 / delta):0.00}";
+    FpsLabel.Text = $"FPS: {(1 / delta):0.00}";
     CalcUiSize();
 
     PlaybackTime = Music.GetPlaybackPosition();
