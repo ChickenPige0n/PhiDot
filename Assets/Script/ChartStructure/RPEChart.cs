@@ -348,6 +348,7 @@ public class EventLayer
 
 public class EventLayerList : List<EventLayer>
 {
+    // TODO: Change to height based Anim<double> for better performance
     /// <summary>
     /// 获取时间范围内速度积分
     /// </summary>

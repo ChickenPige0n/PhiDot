@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Godot;
-using WebSocketSharp;
 using FileAccess = Godot.FileAccess;
 
 public partial class SceneManager : Node2D
@@ -93,7 +92,6 @@ public partial class SceneManager : Node2D
 
 	public override void _Ready()
 	{
-		
 		OS.RequestPermission("android.permission.READ_EXTERNAL_STORAGE");
 		OS.RequestPermission("android.permission.WRITE_EXTERNAL_STORAGE");
 		OS.RequestPermissions();
@@ -130,6 +128,10 @@ public partial class SceneManager : Node2D
 		_slider.ValueChanged += value => CurIndex = (int)Math.Round(value);
 		_slider.Value = 0;
 		CurIndex = 0;
+		
+		if (!OS.HasFeature("movie")) return;
+		_autoPlayButton.ButtonPressed = true;
+		LoadSelectedChart();
 	}
 
 	private partial class ChartDisplayElement : TextureRect
@@ -310,7 +312,7 @@ public partial class SceneManager : Node2D
 		var destDir = DirAccess.Open($"user://Charts/{dirName}");
 		originDir.ListDirBegin();
 		var fileName = originDir.GetNext();
-		while (!fileName.IsNullOrEmpty())
+		while (!String.IsNullOrEmpty(fileName))
 		{
 			if (originDir.CurrentIsDir())
 			{

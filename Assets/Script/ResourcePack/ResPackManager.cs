@@ -22,8 +22,6 @@ public partial class ResPackManager : Node
         // }
         // 
         CurPack = GD.Load<ResPack>("res://Assets/Script/ResourcePack/Official.tres");
-        //CurPack.HoldTexture = CurPack.HoldTexture;
-        //CurPack.HoldHlTexture = CurPack.HoldHlTexture;
         CurPack.HitEffectTexture = CurPack.HitEffectTexture;
     }
 

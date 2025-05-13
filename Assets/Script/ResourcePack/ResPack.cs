@@ -18,10 +18,15 @@ public partial class ResPack : Resource
         set
         {
             _holdTexture = value;
-            HoldTextures = GetHoldTexture(new AtlasTexture {Atlas = value}, (head: HoldAtlas.X, tail: HoldAtlas.Y));
+            GD.Print($"HoldTexture set, atlas: {HoldAtlas.X}, {HoldAtlas.Y}");
+            HoldTextures = GetHoldTextures(new AtlasTexture {Atlas = value}, (tail: HoldAtlas.X, head: HoldAtlas.Y));
+            HoldHeadTexture = HoldTextures.head;
+            GD.Print($"Head texture set: {(HoldHeadTexture as AtlasTexture).Region}");
         }
     }
     public (Texture2D head, Texture2D body, Texture2D tail) HoldTextures;
+    
+    [Export] public Texture2D HoldHeadTexture;
 
 
     [Export] public Texture2D TapHlTexture;
@@ -38,7 +43,7 @@ public partial class ResPack : Resource
         set
         {
             _holdHlTexture = value;
-            HoldHlTextures = GetHoldTexture(new AtlasTexture {Atlas = value}, (head: HoldHlAtlas.X, tail: HoldHlAtlas.Y));
+            HoldHlTextures = GetHoldTextures(new AtlasTexture {Atlas = value}, (tail: HoldHlAtlas.X, head: HoldHlAtlas.Y));
         }
     }
 
@@ -81,7 +86,7 @@ public (Texture2D head, Texture2D body, Texture2D tail) HoldHlTextures;
         {
             for (var j = 0; j < heInfo.column; j++)
             {
-                var frame = (AtlasTexture)heTexture.Duplicate(true);
+                var frame = (AtlasTexture)heTexture.Duplicate();
                 frame.Region = new Rect2(j * fWidth, i * fHeight, fWidth, fHeight);
                 frames.AddFrame("default", frame);
             }
@@ -91,13 +96,13 @@ public (Texture2D head, Texture2D body, Texture2D tail) HoldHlTextures;
         return frames;
     }
 
-    private static (Texture2D head, Texture2D body, Texture2D tail) GetHoldTexture(AtlasTexture holdTexture,
-        (int head, int tail) info)
+    private static (Texture2D head, Texture2D body, Texture2D tail) GetHoldTextures(AtlasTexture holdTexture,
+        (int tail, int head) info)
     {
         var size = holdTexture.Atlas.GetSize();
-        var head = (AtlasTexture)holdTexture.Duplicate(true);
-        var body = (AtlasTexture)holdTexture.Duplicate(true);
-        var tail = (AtlasTexture)holdTexture.Duplicate(true);
+        var head = (AtlasTexture)holdTexture.Duplicate();
+        var body = (AtlasTexture)holdTexture.Duplicate();
+        var tail = (AtlasTexture)holdTexture.Duplicate();
 
         head.Region = new Rect2(0, size.Y - info.head, size.X, info.head);
         body.Region = new Rect2(0, info.tail, size.X, size.Y - info.head - info.tail);
@@ -117,26 +122,20 @@ public (Texture2D head, Texture2D body, Texture2D tail) HoldHlTextures;
             TapTexture = GD.Load<Texture2D>($"{info.DirPath}/click.png");
             FlickTexture = GD.Load<Texture2D>($"{info.DirPath}/flick.png");
             DragTexture = GD.Load<Texture2D>($"{info.DirPath}/drag.png");
+            
+            HoldAtlas = new Vector2I(info.HoldAtlas[0], info.HoldAtlas[1]);
             var holdTexture2D = GD.Load<Texture2D>($"{info.DirPath}/hold.png");
-
-            var texture = new AtlasTexture
-            {
-                Atlas = holdTexture2D
-            };
-            HoldTextures = GetHoldTexture(texture, (head: info.HoldAtlas[1], tail: info.HoldAtlas[0]));
-
+            HoldTexture = holdTexture2D;
+            
+            HoldHlAtlas = new Vector2I(info.HoldAtlasMh[0], info.HoldAtlasMh[1]);
+            var holdHlTexture2D = GD.Load<Texture2D>($"{info.DirPath}/hold_mh.png");
+            HoldHlTexture = holdHlTexture2D;
+            
             TapHlTexture = GD.Load<Texture2D>($"{info.DirPath}/click_mh.png");
             FlickHlTexture = GD.Load<Texture2D>($"{info.DirPath}/flick_mh.png");
             DragHlTexture = GD.Load<Texture2D>($"{info.DirPath}/drag_mh.png");
 
-            texture = new AtlasTexture
-            {
-                Atlas = GD.Load<Texture2D>($"{info.DirPath}/hold_mh.png")
-            };
-
-            HoldHlTextures = GetHoldTexture(texture, (head: info.HoldAtlasMh[1], tail: info.HoldAtlasMh[0]));
-
-            texture = new AtlasTexture
+            var texture = new AtlasTexture
             {
                 Atlas = GD.Load<Texture2D>($"{info.DirPath}/hit_fx.png")
             };
